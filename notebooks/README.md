@@ -1,0 +1,1 @@
+This folder stores programming notebooks (Quarto, Jupyter, etc.) used in the project. 

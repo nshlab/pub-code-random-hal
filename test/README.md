@@ -1,0 +1,1 @@
+This folder stores unit tests designed to check whether simulation functions in the `src` folder are working as expected.

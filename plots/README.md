@@ -1,0 +1,1 @@
+This folder stores plot outputs from code in the `scripts` and `notebooks` folders.

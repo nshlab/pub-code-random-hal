@@ -1,0 +1,1 @@
+This folder stores code designed to be reused across multiple scripts or notebooks (i.e. functions to run simulations or produce specific plots)
