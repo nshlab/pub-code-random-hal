@@ -71,7 +71,7 @@ function draw_approx(X, y, m; replace=false)
     return ym
 end
 
-sims = 10
+sims = 500
 d_approx = 100
 d_range =  0:d_approx
 errs = [[draw_approx(X, y, m; replace = false) for _ in 1:sims] for m in d_range]
@@ -82,23 +82,24 @@ mses_replace = [mean([mse(ym, yhat) for ym in err]) for err in errs_replace]
 
 ```
 
+Finally, let's plot the results. We can see that, indeed, the experimental results lie close to the theoretical bound on the reduction in error.
 
-Finally, let's plot the results. We can see that, indeed, the experimental results lie close to the theoretical bound on the reduction in error. 
 ```{julia}
-plot(d_range, mses ./ mses[1], xlabel = "Number of parameters", ylabel = "MSE (normalized)", color = :blue,
-    label = "No replacement", title = "Uniform sampling, n = 400, 100 replicates")
+p1 = plot(d_range, mses ./ mses[1], xlabel = "Number of parameters", ylabel = "MSE (normalized)", color = :blue, label = "No replacement", dpi = 300)
 plot!(d_range, mses_replace ./ mses_replace[1], xlabel = "Number of parameters", color = :red,
     label = "Replacement")
 plot!(d_range, (1 .- (d_range) ./ d), color = :blue, linestyle = :dash,
     label = "Theoretical 1 - k/d")
 plot!(d_range, exp.(-(d_range) ./ d), color = :red, linestyle = :dash,
     label = "Theoretical exp(-k/d)")
+display(p1)
+savefig(p1, "plots/uncorr_approx.png")
 ```
-
 
 ### Experiment 2: Correlated Covariates
 
 In this second experiment, we show that, under moderate correlation, the mean-squared error of a growing approximation decays much more quickly than the naive uniform sampling bound might predict. First, let's simulate some correlated data.
+
 ```{julia}
 Σ2 = 2 .*  diagm(ones(d)) .+ ones(d,d)
 
@@ -119,23 +120,25 @@ Plots.scatter(y, yhat, legend = false, xlabel = L"Y", ylabel = L"\hat{Y}")
 Next, we will run the same simulation again, but with the new correlated data.
 
 ```{julia}
-errs = [[draw_approx(X, y, m; replace = false) for _ in 1:sims] for m in d_range]
-errs_replace = [[draw_approx(X, y, m; replace = true) for _ in 1:sims] for m in d_range]
+errs2 = [[draw_approx(X, y, m; replace = false) for _ in 1:sims] for m in d_range]
+errs_replace2 = [[draw_approx(X, y, m; replace = true) for _ in 1:sims] for m in d_range]
 
-mses = [mean([mse(ym, yhat) for ym in err]) for err in errs]
-mses_replace = [mean([mse(ym, yhat) for ym in err]) for err in errs_replace]
+mses2 = [mean([mse(ym, yhat) for ym in err]) for err in errs2]
+mses_replace2 = [mean([mse(ym, yhat) for ym in err]) for err in errs_replace2]
 
 ```
 
-Finally, let's plot the results again. We can see that, even with only moderately correlated covariates, the mean-squared error decays much more rapidly as more and more covariates become included in the model. 
+Finally, let's plot the results again. We can see that, even with only moderately correlated covariates, the mean-squared error decays much more rapidly as more and more covariates become included in the model.
+
 ```{julia}
-plot(d_range, mses ./ mses[1], xlabel = "Number of parameters", ylabel = "MSE (normalized)", color = :blue,
-    label = "No replacement", title = "Uniform sampling, n = 400, 100 replicates")
-plot!(d_range, mses_replace ./ mses_replace[1], xlabel = "Number of parameters", color = :red,
+p2 = plot(d_range, mses2 ./ mses2[1], xlabel = "Number of parameters", ylabel = "MSE (normalized)", color = :blue,
+    label = "No replacement", title = "", dpi=300)
+plot!(d_range, mses_replace2 ./ mses_replace2[1], xlabel = "Number of parameters", color = :red,
     label = "Replacement")
 plot!(d_range, (1 .- (d_range) ./ d), color = :blue, linestyle = :dash,
     label = "Theoretical 1 - k/d")
 plot!(d_range, exp.(-(d_range) ./ d), color = :red, linestyle = :dash,
     label = "Theoretical exp(-k/d)")
+display(p2)
+savefig(p2, "plots/corr_approx.png")
 ```
-
