@@ -1,22 +1,3 @@
-using DrWatson
-@quickactivate "RandomHALsims"
-
-using RandomHAL
-using CausalTables
-using Distributions
-using LogExpFunctions
-using MLJ
-using Plots
-using MLJXGBoostInterface
-using MLJLinearModels
-using Tables
-using Copulas
-using LinearAlgebra
-using CSV
-using DataFrames
-using DataFramesMeta
-using Tables
-
 
 function binary_scm(d, d_first, ρ, treat_shift = 0.5)
 
@@ -77,6 +58,7 @@ function simulate_binom(scm::StructuralCausalModel, cate, n::Int, iters::Int, mo
         XA_A0 = responseparents(ct_A0)
 
         for model_pair in modellist
+            try
                 outcome_model, propensity_model = model_pair[2]
 
                 # Fit models
@@ -112,71 +94,19 @@ function simulate_binom(scm::StructuralCausalModel, cate, n::Int, iters::Int, mo
                     cate_mse = cate_mse,
                     time_outcome = time_outcome, time_propensity = time_propensity
                 ))
+            catch
+                println("Error in simulation $(i) of $(n)")
+                println(e)
+                println("Moving on...")
+                continue 
+            end
         end
     end
 
         # Save results as CSV after each thread completes
-    sv = savename((; n, iters, models=join([m[1] for m in modellist], "_")), "csv")
+    sv = DrWatson.savename((; n, iters, models=join([m[1] for m in modellist], "_")), "csv")
     CSV.write(datadir(sv), DataFrame(result))
 
     return result
 end
 
-make_models(n, k) = [
-    "RandomHAL0" => (
-    RandomHALRegressor(smoothness = 0, max_block_size = n ÷ k, tol = 1e-7, nfolds = 5, nlambda = 100),
-    RandomHALClassifier(smoothness = 0, max_block_size = n ÷ k, tol = 1e-7, nfolds = 5, nlambda = 100)
-    ),
-    "RandomHAL1" => (
-    RandomHALRegressor(smoothness = 1, max_block_size = n ÷ k, tol = 1e-7, nfolds = 5, nlambda = 100),
-    RandomHALClassifier(smoothness = 1, max_block_size = n ÷ k, tol = 1e-7, nfolds = 5, nlambda = 100)
-    )
-]
-
-scm, cate = binary_scm(40, 20, 0.1)
-result = [simulate_binom(scm, cate, n, 5, make_models(n, 4)) for n in [100, 400]]
-
-df = DataFrame(reduce(vcat, result))
-
-@chain df begin
-    @groupby(:n, :model_name)
-    @combine(:mean_mse_outcome = mean(:mse_outcome), 
-             :mean_mse_propensity = mean(:mse_propensity), 
-             :mean_ose = mean(:ose), 
-             :mean_ose_var = mean(:ose_var))
-end
-
-
-make_comparison(n, k) = [
-    "RandomHAL0" => (
-    RandomHALRegressor(smoothness = 0, max_block_size = n ÷ k, tol = 1e-7, nfolds = 5, nlambda = 100),
-    RandomHALClassifier(smoothness = 0, max_block_size = n ÷ k, tol = 1e-7, nfolds = 5, nlambda = 100)
-    ),
-    "RandomHAL1" => (
-    RandomHALRegressor(smoothness = 1, max_block_size = n ÷ k, tol = 1e-7, nfolds = 5, nlambda = 100),
-    RandomHALClassifier(smoothness = 1, max_block_size = n ÷ k, tol = 1e-7, nfolds = 5, nlambda = 100)
-    ),
-    "HAL0" => (
-    HALRegressor(0),
-    HALBinaryClassifier(0)
-    ),
-    "HAL1" => (
-    HALRegressor(1),
-    HALBinaryClassifier(1)
-    )
-]
-
-scm3, cate3 = binary_scm(3, 3, 0.1)
-result = [simulate_binom(scm3, cate3, n, 5, make_comparison(n, 4)) for n in [400]]
-
-df = DataFrame(reduce(vcat, result))
-
-@chain df begin
-    @groupby(:n, :model_name)
-    @combine(:mean_mse_outcome = mean(:mse_outcome), 
-             :mean_mse_propensity = mean(:mse_propensity), 
-             :mean_ose = mean(:ose), 
-             :mean_ose_var = mean(:ose_var),
-             :mean_cate_mse = mean(:cate_mse)
-             )
-end
