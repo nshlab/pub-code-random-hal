@@ -20,6 +20,8 @@ df = DataFrame(reduce(vcat, result))
              :mean_mse_propensity = mean(:mse_propensity), 
              :mean_bias = mean(:ose) .- mean(:true_ate), 
              :mean_ose_var = mean(:ose_var),
-             :mean_cate_mse = mean(:cate_mse)
+             :mean_cate_mse = mean(:cate_mse),
+             :mean_time_outcome = mean(:time_outcome),
+             :mean_time_propensity = mean(:time_propensity)
              )
 end
