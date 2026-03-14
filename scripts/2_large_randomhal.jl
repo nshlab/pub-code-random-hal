@@ -1,6 +1,8 @@
 using DrWatson
 @quickactivate "RandomHALsims"
 
+using RandomHAL
+
 make_models(n, k) = [
     "RandomHAL0" => (
     RandomHALRegressor(smoothness = 0, max_block_size = n ÷ k, tol = 1e-7, nfolds = 5, nlambda = 100),
