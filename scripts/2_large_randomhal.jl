@@ -1,5 +1,5 @@
 using DrWatson
-@quickactivate "RandomHALsims"
+@quickactivate :RandomHALsims
 
 using RandomHAL
 
