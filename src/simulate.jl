@@ -21,7 +21,6 @@ function safe_predict(mach, X,  miny, maxy)
     preds[preds .> maxy] .= maxy
     return preds
 end
-
 function simulate_binom(scm::StructuralCausalModel, cate, n::Int, iters::Int, modellist)
     result = []
 
@@ -58,7 +57,6 @@ function simulate_binom(scm::StructuralCausalModel, cate, n::Int, iters::Int, mo
         XA_A0 = responseparents(ct_A0)
 
         for model_pair in modellist
-            try
                 outcome_model, propensity_model = model_pair[2]
 
                 # Fit models
@@ -70,7 +68,7 @@ function simulate_binom(scm::StructuralCausalModel, cate, n::Int, iters::Int, mo
                 mse_propensity = mean((MLJ.predict(propensity_mach, Xtest) .- true_prob).^2)
 
                 # Compute one-step estimates using models
-                prA = MLJ.predict(propensity_mach, X)
+                prA = safe_predict(propensity_mach, X, 0.02, 0.98)
                 μ = safe_predict(outcome_mach, XA, miny, maxy)
                 μ1 = safe_predict(outcome_mach, XA_A1, miny, maxy)
                 μ0 = safe_predict(outcome_mach, XA_A0, miny, maxy)
@@ -94,12 +92,6 @@ function simulate_binom(scm::StructuralCausalModel, cate, n::Int, iters::Int, mo
                     cate_mse = cate_mse,
                     time_outcome = time_outcome, time_propensity = time_propensity
                 ))
-            catch
-                println("Error in simulation $(i) of $(n)")
-                println(e)
-                println("Moving on...")
-                continue 
-            end
         end
     end
 

@@ -23,4 +23,4 @@ make_comparison(n, k) = [
 ]
 
 scm3, cate3 = binary_scm(4, 4, 0.1)
-result = [simulate_binom(scm3, cate3, n, 100, make_comparison(n, 4)) for n in [100, 400, 900, 1600]]
+result = [simulate_binom(scm3, cate3, n, 200, make_comparison(n, 4)) for n in [100, 400, 900, 1600]]
