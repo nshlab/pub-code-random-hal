@@ -15,12 +15,30 @@ function binary_scm(d, d_first, ρ, treat_shift = 0.5)
     return scm, cate
 end
 
+function small_scm()
+
+    dgp = @dgp(
+        X1 ~ Beta(2, 2),
+        X2 ~ Beta(2, 2),
+        X3 ~ Beta(2, 2),
+        X4 ~ Beta(2, 2),
+        μ = (@. 2*(1 + 2*X1) * (X2 - X2^(3/2) + X3 - X3^(3/2) + X4 - X4^(3/2)) - 1.5),
+        A ~ (@. Bernoulli(logistic(μ))),
+        Y ~ (@. Normal((1 + A) * μ, 0.1))
+    )
+    scm = StructuralCausalModel(dgp, :A, :Y)
+    cate(dat) = 2 .* (1 .+ 2 .* dat.X1 .^ 2) .* mean((dat.X2 .- dat.X2 .^(3/2) .+ dat.X3 .- dat.X3 .^(3/2) .+ dat.X4 .- dat.X4 .^(3/2)) .- 1.5)
+    
+    return scm, cate
+end
+
 function safe_predict(mach, X,  miny, maxy)
     preds = MLJ.predict(mach, X)
     preds[preds .< miny] .= miny
     preds[preds .> maxy] .= maxy
     return preds
 end
+
 function simulate_binom(scm::StructuralCausalModel, cate, n::Int, iters::Int, modellist)
     result = []
 
@@ -34,7 +52,7 @@ function simulate_binom(scm::StructuralCausalModel, cate, n::Int, iters::Int, mo
         X = treatmentparents(ct)
         A = treatmentmatrix(ct)[:,1]
         y = responsematrix(ct)[:, 1]
-        L1 = (L1 = ct.data.L_1,)
+        X1 = (X1 = Tables.getcolumn(X, 1),)
         miny = minimum(y)
         maxy = maximum(y)
 
@@ -42,10 +60,10 @@ function simulate_binom(scm::StructuralCausalModel, cate, n::Int, iters::Int, mo
         # Generate testing data
         cttest = rand(scm, n)
         XAtest = responseparents(cttest)
-        Xtest = responseparents(cttest)
+        Xtest = treatmentparents(cttest)
         Atest = treatmentmatrix(ct)[:,1]
         ytest = responsematrix(cttest)[:, 1]
-        L1test = (L1 = cttest.data.L_1,)
+        X1test = (X1 = Tables.getcolumn(Xtest, 1),)
 
         # Get true function values
         true_conmean = conmean(scm, cttest, :Y)
@@ -80,9 +98,9 @@ function simulate_binom(scm::StructuralCausalModel, cate, n::Int, iters::Int, mo
                 ose_var = var(eif) / n
 
                 # Compute CATE
-                cate_mach = machine(outcome_model, L1, eif) |> fit!
-                cate_pred = MLJ.predict(cate_mach, L1test)
-                cate_mse = mean((cate_pred .- cate(Tables.matrix(Xtest))).^2)
+                cate_mach = machine(outcome_model, X1, eif) |> fit!
+                cate_pred = MLJ.predict(cate_mach, X1test)
+                cate_mse = mean((cate_pred .- cate(Xtest.data)).^2)
 
                 push!(result, (
                     n = n, model_name = model_pair[1], plugin = plugin,
@@ -97,8 +115,7 @@ function simulate_binom(scm::StructuralCausalModel, cate, n::Int, iters::Int, mo
 
         # Save results as CSV after each thread completes
     sv = DrWatson.savename((; n, iters, models=join([m[1] for m in modellist], "_")), "csv")
-    CSV.write(datadir(sv), DataFrame(result))
+    CSV.write(datadir(string(Dates.now()) * "_" * sv), DataFrame(result))
 
     return result
 end
-

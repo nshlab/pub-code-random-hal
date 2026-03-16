@@ -5,7 +5,6 @@ module RandomHALsims
     using Distributions
     using LogExpFunctions
     using MLJ
-    using Plots
     using Tables
     using Copulas
     using LinearAlgebra
@@ -14,8 +13,9 @@ module RandomHALsims
     using DataFramesMeta
     using Tables
     using DrWatson
+    using Dates
 
     include("simulate.jl")
-    export binary_scm, simulate_binom
+    export binary_scm, small_scm, simulate_binom
 
 end
