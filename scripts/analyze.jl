@@ -109,12 +109,12 @@ df_raw = DataFrame(reduce(vcat, result))
 generate_plots(df_raw, "compare_")
 
 ### Large variables test ###
-name(n) = "iters=200_models=RandomHAL0_RandomHAL1_n=$(n).csv"
+name(n) = "iters=5_models=RandomHAL0_RandomHAL1_n=$(n).csv"
 
-ns = [100, 400, 900]
+ns = [100]
 result = [CSV.read(datadir(name(n)), DataFrame) for n in ns]
 df_raw = DataFrame(reduce(vcat, result))
 
-generate_plots(df_raw, "large_")
+generate_plots(df_raw, "test_")
 
 
