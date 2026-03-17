@@ -1,33 +1,15 @@
 
-function binary_scm(d, d_first, ρ, treat_shift = 0.5)
+function binary_scm(d, d_first, ρ = 0.05, treat_shift = 2)
 
     dgp = @dgp(
-        L ~ SklarDist(GaussianCopula(d, ρ), Tuple(fill(Uniform(), d))),
-        wave = vec(mean(sin.(2 .* pi .* L[:, 2:d_first]), dims = 2)) .+ 1,
-        g = (1 .+ 2 .* L[:, 1].^2) .* wave,
-        A ~ Bernoulli.(logistic.(2 .* (g .- 1.5))),
-        Y ~ Normal.((1 .+ treat_shift .* A) .* g, 0.1)
+        L ~ SklarDist(GaussianCopula(d, ρ), Tuple(fill(Beta(2,2), d))),
+        μ = (1 .+ 2 .* L[:, 1]) .* vec(mean(L[:,2:d_first] .- L[:,2:d_first] .^ (1/2), dims = 2)) .+ 0.5,
+        A ~ Bernoulli.(logistic.(μ)),
+        Y ~ Normal.((1 .+ treat_shift .* A) .* μ .+ 2, 0.1)
     )
 
     scm = StructuralCausalModel(dgp, :A, :Y)
-    cate(L) = treat_shift .* (1 .+ 2 .* L[:, 1].^2) .* mean(vec(mean(sin.(2 .* pi .* L[:, 2:d_first]), dims = 2)) .+ 1)
-    
-    return scm, cate
-end
-
-function small_scm()
-
-    dgp = @dgp(
-        X1 ~ Beta(2, 2),
-        X2 ~ Beta(2, 2),
-        X3 ~ Beta(2, 2),
-        X4 ~ Beta(2, 2),
-        μ = (@. 2*(1 + 2*X1) * (X2 - X2^(3/2) + X3 - X3^(3/2) + X4 - X4^(3/2)) - 1.5),
-        A ~ (@. Bernoulli(logistic(μ))),
-        Y ~ (@. Normal((1 + A) * μ, 0.1))
-    )
-    scm = StructuralCausalModel(dgp, :A, :Y)
-    cate(dat) = 2 .* (1 .+ 2 .* dat.X1 .^ 2) .* mean((dat.X2 .- dat.X2 .^(3/2) .+ dat.X3 .- dat.X3 .^(3/2) .+ dat.X4 .- dat.X4 .^(3/2)) .- 1.5)
+    cate(L) = treat_shift .* ((1 .+ 2 .* L[:, 1]) .* mean(vec(mean(L[:,2:d_first] .- (L[:,2:d_first] .^(1/2)), dims = 2))) .+ 0.5)
     
     return scm, cate
 end
@@ -100,7 +82,7 @@ function simulate_binom(scm::StructuralCausalModel, cate, n::Int, iters::Int, mo
                 # Compute CATE
                 cate_mach = machine(outcome_model, X1, eif) |> fit!
                 cate_pred = MLJ.predict(cate_mach, X1test)
-                cate_mse = mean((cate_pred .- cate(Xtest.data)).^2)
+                cate_mse = mean((cate_pred .- cate(Tables.matrix(Xtest))).^2)
 
                 push!(result, (
                     n = n, model_name = model_pair[1], plugin = plugin,

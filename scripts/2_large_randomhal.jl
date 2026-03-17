@@ -14,5 +14,5 @@ make_models(n, k) = [
     )
 ]
 
-scm, cate = binary_scm(40, 20, 0.1)
-result = [simulate_binom(scm, cate, n, 200, make_models(n, 4)) for n in [100, 400, 900, 1600]]
+scm, cate = binary_scm(40, 8)
+result = [simulate_binom(scm, cate, n, 100, make_models(n, 2)) for n in [100, 400, 900, 1600]]

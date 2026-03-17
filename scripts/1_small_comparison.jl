@@ -22,5 +22,5 @@ make_comparison(n, k) = [
     )
 ]
 
-scm, cate = small_scm()
-result = [simulate_binom(scm, cate, n, 5, make_comparison(n, 2)) for n in [50, 100]]
+scm, cate = binary_scm(4, 4)
+result = [simulate_binom(scm, cate, n, 100, make_comparison(n, 2)) for n in [100, 400, 900, 1600]]
