@@ -131,10 +131,15 @@ filenames = [
     "2026-03-21T21_56_35.340_iters=100_models=RandomHAL0_RandomHAL1_n=1600.csv"
 ]
 
+filenames = [
+    "2026-05-13T16:24:03.578_iters=2_models=RandomHAL0_RandomHAL1_RandomHAL_minnonzero0_RandomHAL_minnonzero1_RandomHAL_keeptreat0_RandomHAL_keeptreat1_RandomHAL_intdecay0_RandomHAL_intdecay1_n=100.csv",
+    "2026-05-13T16:27:12.006_iters=2_models=RandomHAL0_RandomHAL1_RandomHAL_minnonzero0_RandomHAL_minnonzero1_RandomHAL_keeptreat0_RandomHAL_keeptreat1_RandomHAL_intdecay0_RandomHAL_intdecay1_n=400.csv"
+]
+
 
 result = [CSV.read(datadir(name), DataFrame) for name in filenames]
 df_raw = DataFrame(reduce(vcat, result))
 
-generate_plots(df_raw, "test_", 0.075)
+generate_plots(df_raw, "test_compare_", 0.075)
 
 
