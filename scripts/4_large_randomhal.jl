@@ -2,6 +2,7 @@ using DrWatson
 @quickactivate :RandomHALsims
 
 using RandomHAL
+using StatsBase
 
 function make_comparison(n, d)
 
