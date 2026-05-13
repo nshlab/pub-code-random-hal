@@ -13,7 +13,8 @@ create_axis_time(ns, title) = (aspect=1, xticks=ns, xlabel = "Sample size", ylab
 create_axis_ose(ns, ylabel) = (aspect=1, xticks=ns, xlabel = "Sample size", ylabel=ylabel)
 create_axis_mse(ns, title) = (aspect=1, xticks=ns, xlabel = "Sample size", ylabel="Out-of-sample MSE", title = title)
 
-function generate_plots(df_raw, str)
+function generate_plots(df_raw, str, eff_bound)
+    ns = unique(df_raw.n)
     df_raw[!, "upper"] = df_raw.ose .+ 1.96 .* sqrt.(df_raw.ose_var)
     df_raw[!, "lower"] = df_raw.ose .- 1.96 .* sqrt.(df_raw.ose_var)
 
@@ -66,12 +67,13 @@ function generate_plots(df_raw, str)
     ag = draw!(fig[1, 2], p2, axis=create_axis_ose(ns, "Scaled bias"))
 
     p3 = template * 
-        mapping(:n, :scaled_mse, color=:model, linestyle=:smoothness)
+        mapping(:n, :scaled_mse, color=:model, linestyle=:smoothness) + 
+        (visual(HLines) * mapping([eff_bound]))
     ag = draw!(fig[2, 1], p3, axis=create_axis_ose(ns, "Scaled MSE"))
 
     p4 = (template * mapping(:n, :coverage, color=:model, linestyle=:smoothness)) + 
         (visual(HLines) * mapping([0.95]))
-    ag = draw!(fig[2, 2], p4, axis=(aspect=1, xticks=ns, yticks = [0.95, 0.70, 0.45, 0.2, 0.0], xlabel = "Sample size", ylabel="Coverage"))
+    ag = draw!(fig[2, 2], p4, axis=(aspect=1, xticks=ns, yticks = [0.0, 0.5, 0.95], xlabel = "Sample size", ylabel="Coverage", limits=(nothing, (0.0, 1.0))))
 
     legend!(fig[3, 1:2], ag, orientation=:horizontal, tellheight=true)
     colgap!(fig.layout, 0)
@@ -100,21 +102,39 @@ end
 
 
 # Comparison 
-name(n) = "iters=200_models=RandomHAL0_RandomHAL1_HAL0_HAL1_n=$(n).csv"
+#name(n) = "iters=200_models=RandomHAL0_RandomHAL1_HAL0_HAL1_n=$(n).csv"
+#ns = [100, 400, 900, 1600]
+#result = [CSV.read(datadir(name(n)), DataFrame) for n in ns]
 
-ns = [100, 400, 900, 1600]
-result = [CSV.read(datadir(name(n)), DataFrame) for n in ns]
+filenames = [
+    "2026-03-17T15_16_28.950_iters=100_models=RandomHAL0_RandomHAL1_HAL0_HAL1_n=100.csv",
+    "2026-03-17T16_57_04.174_iters=100_models=RandomHAL0_RandomHAL1_HAL0_HAL1_n=400.csv",
+    "2026-03-17T21_07_20.152_iters=100_models=RandomHAL0_RandomHAL1_HAL0_HAL1_n=900.csv",
+    "2026-03-18T08_55_40.667_iters=100_models=RandomHAL0_RandomHAL1_HAL0_HAL1_n=1600.csv"
+]
+
+filenames = [
+    "2026-05-13T14:11:50.026_iters=2_models=RandomHAL0_RandomHAL1_RandomHAL_minnonzero0_RandomHAL_minnonzero1_RandomHAL_keeptreat0_RandomHAL_keeptreat1_RandomHAL_intdecay0_RandomHAL_intdecay1_HAL0_HAL1_n=100.csv",
+    "2026-05-13T14:18:36.004_iters=2_models=RandomHAL0_RandomHAL1_RandomHAL_minnonzero0_RandomHAL_minnonzero1_RandomHAL_keeptreat0_RandomHAL_keeptreat1_RandomHAL_intdecay0_RandomHAL_intdecay1_HAL0_HAL1_n=400.csv"
+]
+
+result = [CSV.read(datadir(name), DataFrame) for name in filenames]
 df_raw = DataFrame(reduce(vcat, result))
 
-generate_plots(df_raw, "compare_")
+generate_plots(df_raw, "test_compare_", 0.0964)
 
 ### Large variables test ###
-name(n) = "iters=5_models=RandomHAL0_RandomHAL1_n=$(n).csv"
+filenames = [
+    "2026-03-20T15_55_06.191_iters=100_models=RandomHAL0_RandomHAL1_n=100.csv",
+    "2026-03-20T18_11_19.043_iters=100_models=RandomHAL0_RandomHAL1_n=400.csv",
+    "2026-03-21T01_30_26.486_iters=100_models=RandomHAL0_RandomHAL1_n=900.csv",
+    "2026-03-21T21_56_35.340_iters=100_models=RandomHAL0_RandomHAL1_n=1600.csv"
+]
 
-ns = [100]
-result = [CSV.read(datadir(name(n)), DataFrame) for n in ns]
+
+result = [CSV.read(datadir(name), DataFrame) for name in filenames]
 df_raw = DataFrame(reduce(vcat, result))
 
-generate_plots(df_raw, "test_")
+generate_plots(df_raw, "test_", 0.075)
 
 

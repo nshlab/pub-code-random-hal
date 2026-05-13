@@ -5,7 +5,7 @@ function binary_scm(d, d_first, ρ = 0.05, treat_shift = 2)
         L ~ SklarDist(GaussianCopula(d, ρ), Tuple(fill(Beta(2,2), d))),
         μ = (1 .+ 2 .* L[:, 1]) .* vec(mean(L[:,2:d_first] .- L[:,2:d_first] .^ (1/2), dims = 2)) .+ 0.5,
         A ~ Bernoulli.(logistic.(μ)),
-        Y ~ Normal.((1 .+ treat_shift .* A) .* μ .+ 2, 0.1)
+        Y ~ Normal.((1 .+ treat_shift .* A) .* μ .+ 2, 0.5)
     )
 
     scm = StructuralCausalModel(dgp, :A, :Y)
