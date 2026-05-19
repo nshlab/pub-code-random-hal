@@ -1,9 +1,10 @@
-using DrWatson
-@quickactivate :RandomHALsims
-
 using RandomHAL
 using StatsBase
 
+n = parse(Int, ARGS[1])
+i = ARGS[2]
+
+# Define the nuisance estimators for this simulation and DGP combination
 function make_comparison(n, d)
 
     # Parameters for LASSO fitting
@@ -15,7 +16,7 @@ function make_comparison(n, d)
     sec = [[d+1]]
 
     # Parameter to control minimum number of nonzero entries
-    minnonzero = Int(floor(sqrt(n)))
+    #minnonzero = Int(floor(sqrt(n)))
 
     # Functionality to sample interactions with decaying probability
     int_order = Int(round(0.5 * log(n)))
@@ -23,40 +24,38 @@ function make_comparison(n, d)
 
     return([
         "RandomHAL0" => (
-        RandomHALRegressor(0, nλ, folds, m, 0, NamedTuple()),
-        RandomHALBinaryClassifier(0, nλ, folds, m, 0, NamedTuple())
+        RandomHALRegressor(0, nλ, folds, m, NamedTuple()),
+        RandomHALBinaryClassifier(0, nλ, folds, m, NamedTuple())
         ),
         "RandomHAL1" => (
-        RandomHALRegressor(1, nλ, folds, m, 0, NamedTuple()),
-        RandomHALBinaryClassifier(1, nλ, folds, m, 0, NamedTuple())
-        ),
-        "RandomHAL_minnonzero0" => (
-        RandomHALRegressor(0, nλ, folds, m, minnonzero, NamedTuple()),
-        RandomHALBinaryClassifier(0, nλ, folds, m, minnonzero, NamedTuple())
-        ),
-        "RandomHAL_minnonzero1" => (
-        RandomHALRegressor(1, nλ, folds, m, 0, NamedTuple()),
-        RandomHALBinaryClassifier(1, nλ, folds, m, 0, NamedTuple())
+        RandomHALRegressor(1, nλ, folds, m, NamedTuple()),
+        RandomHALBinaryClassifier(1, nλ, folds, m, NamedTuple())
         ),
         "RandomHAL_keeptreat0" => (
-        RandomHALRegressor(0, nλ, folds, m, 0, (guaranteed_sections = sec,)),
-        RandomHALBinaryClassifier(0, nλ, folds, m, 0, NamedTuple())
+        RandomHALRegressor(0, nλ, folds, m, (guaranteed_sections = sec,)),
+        RandomHALBinaryClassifier(0, nλ, folds, m, NamedTuple())
         ),
         "RandomHAL_keeptreat1" => (
-        RandomHALRegressor(1, nλ, folds, m, 0, (guaranteed_sections = sec,)),
-        RandomHALBinaryClassifier(1, nλ, folds, m, 0, NamedTuple())
+        RandomHALRegressor(1, nλ, folds, m, (guaranteed_sections = sec,)),
+        RandomHALBinaryClassifier(1, nλ, folds, m, NamedTuple())
         ),
         "RandomHAL_intdecay0" => (
-        RandomHALRegressor(0, nλ, folds, m, 0, (guaranteed_sections = sec, interaction_order_weights = int_weight)),
-        RandomHALBinaryClassifier(0, nλ, folds, m, 0, NamedTuple())
+        RandomHALRegressor(0, nλ, folds, m, (guaranteed_sections = sec, interaction_order_weights = int_weight)),
+        RandomHALBinaryClassifier(0, nλ, folds, m, NamedTuple())
         ),
         "RandomHAL_intdecay1" => (
-        RandomHALRegressor(1, nλ, folds, m, 0, (guaranteed_sections = sec, interaction_order_weights = int_weight)),
-        RandomHALBinaryClassifier(1, nλ, folds, m, 0, NamedTuple())
+        RandomHALRegressor(1, nλ, folds, m, (guaranteed_sections = sec, interaction_order_weights = int_weight)),
+        RandomHALBinaryClassifier(1, nλ, folds, m, NamedTuple())
         )
     ])
 end
 
+# Define the SCM for this DGP
 d = 40
 scm, cate = binary_scm(d, 8)
-result = [simulate_binom(scm, cate, n, 100, make_comparison(n, d)) for n in [100, 400, 900, 1600]] 
+
+# Save results to directory with 
+dir = basename(@__FILE__)[1:(end-3)]
+
+# Run the simulation
+simulate_binom(scm, cate, n, make_comparison(n, d), dir, i)

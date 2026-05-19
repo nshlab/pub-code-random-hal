@@ -1,8 +1,8 @@
-using DrWatson
-@quickactivate :RandomHALsims
-
 using RandomHAL
 using StatsBase
+
+n = parse(Int, ARGS[1])
+i = ARGS[2]
 
 function make_comparison(n, d)
 
@@ -23,48 +23,54 @@ function make_comparison(n, d)
 
     return([
         "RandomHAL0" => (
-        RandomHALRegressor(0, nλ, folds, m, 0, NamedTuple()),
-        RandomHALBinaryClassifier(0, nλ, folds, m, 0, NamedTuple())
+        RandomHALRegressor(0, nλ, folds, m, NamedTuple()),
+        RandomHALBinaryClassifier(0, nλ, folds, m, NamedTuple())
         ),
         "RandomHAL1" => (
-        RandomHALRegressor(1, nλ, folds, m, 0, NamedTuple()),
-        RandomHALBinaryClassifier(1, nλ, folds, m, 0, NamedTuple())
-        ),
-        "RandomHAL_minnonzero0" => (
-        RandomHALRegressor(0, nλ, folds, m, minnonzero, NamedTuple()),
-        RandomHALBinaryClassifier(0, nλ, folds, m, minnonzero, NamedTuple())
-        ),
-        "RandomHAL_minnonzero1" => (
-        RandomHALRegressor(1, nλ, folds, m, 0, NamedTuple()),
-        RandomHALBinaryClassifier(1, nλ, folds, m, 0, NamedTuple())
+        RandomHALRegressor(1, nλ, folds, m, NamedTuple()),
+        RandomHALBinaryClassifier(1, nλ, folds, m, NamedTuple())
         ),
         "RandomHAL_keeptreat0" => (
-        RandomHALRegressor(0, nλ, folds, m, 0, (guaranteed_sections = sec,)),
-        RandomHALBinaryClassifier(0, nλ, folds, m, 0, NamedTuple())
+        RandomHALRegressor(0, nλ, folds, m, (guaranteed_sections = sec,)),
+        RandomHALBinaryClassifier(0, nλ, folds, m, NamedTuple())
         ),
         "RandomHAL_keeptreat1" => (
-        RandomHALRegressor(1, nλ, folds, m, 0, (guaranteed_sections = sec,)),
-        RandomHALBinaryClassifier(1, nλ, folds, m, 0, NamedTuple())
+        RandomHALRegressor(1, nλ, folds, m, (guaranteed_sections = sec,)),
+        RandomHALBinaryClassifier(1, nλ, folds, m, NamedTuple())
         ),
         "RandomHAL_intdecay0" => (
-        RandomHALRegressor(0, nλ, folds, m, 0, (guaranteed_sections = sec, interaction_order_weights = int_weight)),
-        RandomHALBinaryClassifier(0, nλ, folds, m, 0, NamedTuple())
+        RandomHALRegressor(0, nλ, folds, m, (guaranteed_sections = sec, interaction_order_weights = int_weight)),
+        RandomHALBinaryClassifier(0, nλ, folds, m, NamedTuple())
         ),
         "RandomHAL_intdecay1" => (
-        RandomHALRegressor(1, nλ, folds, m, 0, (guaranteed_sections = sec, interaction_order_weights = int_weight)),
-        RandomHALBinaryClassifier(1, nλ, folds, m, 0, NamedTuple())
+        RandomHALRegressor(1, nλ, folds, m, (guaranteed_sections = sec, interaction_order_weights = int_weight)),
+        RandomHALBinaryClassifier(1, nλ, folds, m, NamedTuple())
         ),
         "HAL0" => (
-        HALRegressor(0, nλ, folds),
-        HALBinaryClassifier(0, nλ, folds)
+        HALRegressor(0, 0, nλ, folds),
+        HALBinaryClassifier(0, 0, nλ, folds)
         ),
         "HAL1" => (
-        HALRegressor(1, nλ, folds),
-        HALBinaryClassifier(1, nλ, folds)
+        HALRegressor(1, 0, nλ, folds),
+        HALBinaryClassifier(1, 0, nλ, folds)
+        ),
+        "HAL_minnonzero0" => (
+        HALRegressor(0, minnonzero, nλ, folds),
+        HALBinaryClassifier(0, minnonzero, nλ, folds)
+        ),
+        "HAL_minnonzero1" => (
+        HALRegressor(1, minnonzero, nλ, folds),
+        HALBinaryClassifier(1, minnonzero, nλ, folds)
         )
     ])
 end
 
+# Define the SCM for this DGP
 d = 5
 scm, cate = binary_scm(d, d)
-result = [simulate_binom(scm, cate, n, 2, make_comparison(n, d)) for n in [100, 400]]
+
+# Save results to directory with 
+dir = basename(@__FILE__)[1:(end-3)]
+
+# Run the simulation
+simulate_binom(scm, cate, n, make_comparison(n, d), dir, i)
