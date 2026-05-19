@@ -16,7 +16,7 @@ function make_comparison(n, d)
     sec = [[d+1]]
 
     # Parameter to control minimum number of nonzero entries
-    minnonzero = Int(floor(sqrt(n)))
+    #minnonzero = Int(floor(sqrt(n)))
 
     # Functionality to sample interactions with decaying probability
     int_order = Int(round(0.5 * log(n)))
@@ -24,28 +24,28 @@ function make_comparison(n, d)
 
     return([
         "RandomHAL0" => (
-        RandomHALRegressor(0, nλ, folds, m, 0, NamedTuple()),
-        RandomHALBinaryClassifier(0, nλ, folds, m, 0, NamedTuple())
+        RandomHALRegressor(0, nλ, folds, m, NamedTuple()),
+        RandomHALBinaryClassifier(0, nλ, folds, m, NamedTuple())
         ),
         "RandomHAL1" => (
-        RandomHALRegressor(1, nλ, folds, m, 0, NamedTuple()),
-        RandomHALBinaryClassifier(1, nλ, folds, m, 0, NamedTuple())
+        RandomHALRegressor(1, nλ, folds, m, NamedTuple()),
+        RandomHALBinaryClassifier(1, nλ, folds, m, NamedTuple())
         ),
         "RandomHAL_keeptreat0" => (
-        RandomHALRegressor(0, nλ, folds, m, 0, (guaranteed_sections = sec,)),
-        RandomHALBinaryClassifier(0, nλ, folds, m, 0, NamedTuple())
+        RandomHALRegressor(0, nλ, folds, m, (guaranteed_sections = sec,)),
+        RandomHALBinaryClassifier(0, nλ, folds, m, NamedTuple())
         ),
         "RandomHAL_keeptreat1" => (
-        RandomHALRegressor(1, nλ, folds, m, 0, (guaranteed_sections = sec,)),
-        RandomHALBinaryClassifier(1, nλ, folds, m, 0, NamedTuple())
+        RandomHALRegressor(1, nλ, folds, m, (guaranteed_sections = sec,)),
+        RandomHALBinaryClassifier(1, nλ, folds, m, NamedTuple())
         ),
         "RandomHAL_intdecay0" => (
-        RandomHALRegressor(0, nλ, folds, m, 0, (guaranteed_sections = sec, interaction_order_weights = int_weight)),
-        RandomHALBinaryClassifier(0, nλ, folds, m, 0, NamedTuple())
+        RandomHALRegressor(0, nλ, folds, m, (guaranteed_sections = sec, interaction_order_weights = int_weight)),
+        RandomHALBinaryClassifier(0, nλ, folds, m, NamedTuple())
         ),
         "RandomHAL_intdecay1" => (
-        RandomHALRegressor(1, nλ, folds, m, 0, (guaranteed_sections = sec, interaction_order_weights = int_weight)),
-        RandomHALBinaryClassifier(1, nλ, folds, m, 0, NamedTuple())
+        RandomHALRegressor(1, nλ, folds, m, (guaranteed_sections = sec, interaction_order_weights = int_weight)),
+        RandomHALBinaryClassifier(1, nλ, folds, m, NamedTuple())
         )
     ])
 end
