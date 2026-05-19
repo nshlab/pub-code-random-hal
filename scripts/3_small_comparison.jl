@@ -1,8 +1,8 @@
-using DrWatson
-@quickactivate :RandomHALsims
-
 using RandomHAL
 using StatsBase
+
+n = parse(Int, ARGS[1])
+i = ARGS[2]
 
 function make_comparison(n, d)
 
@@ -27,14 +27,6 @@ function make_comparison(n, d)
         RandomHALBinaryClassifier(0, nλ, folds, m, 0, NamedTuple())
         ),
         "RandomHAL1" => (
-        RandomHALRegressor(1, nλ, folds, m, 0, NamedTuple()),
-        RandomHALBinaryClassifier(1, nλ, folds, m, 0, NamedTuple())
-        ),
-        "RandomHAL_minnonzero0" => (
-        RandomHALRegressor(0, nλ, folds, m, minnonzero, NamedTuple()),
-        RandomHALBinaryClassifier(0, nλ, folds, m, minnonzero, NamedTuple())
-        ),
-        "RandomHAL_minnonzero1" => (
         RandomHALRegressor(1, nλ, folds, m, 0, NamedTuple()),
         RandomHALBinaryClassifier(1, nλ, folds, m, 0, NamedTuple())
         ),
@@ -65,6 +57,12 @@ function make_comparison(n, d)
     ])
 end
 
+# Define the SCM for this DGP
 d = 5
 scm, cate = binary_scm(d, d)
-result = [simulate_binom(scm, cate, n, 2, make_comparison(n, d)) for n in [100, 400]]
+
+# Save results to directory with 
+dir = basename(@__FILE__)[1:(end-3)]
+
+# Run the simulation
+simulate_binom(scm, cate, n, make_comparison(n, d), dir, i)
