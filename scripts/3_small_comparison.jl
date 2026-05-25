@@ -7,8 +7,7 @@ i = ARGS[2]
 function make_comparison(n, d)
 
     # Parameters for LASSO fitting
-    nλ = 100
-    folds = 10
+    kwargs = (standardize = false, nlambda = 100, folds = 10,)
 
     # Parameter to control how many basis functions are sampled in RandomHAL
     m = Int(round(0.5 * n * log(n)))
@@ -23,44 +22,44 @@ function make_comparison(n, d)
 
     return([
         "RandomHAL0" => (
-        RandomHALRegressor(0, nλ, folds, m, NamedTuple()),
-        RandomHALBinaryClassifier(0, nλ, folds, m, NamedTuple())
+        RandomHALRegressor(0, m, NamedTuple(), kwargs),
+        RandomHALBinaryClassifier(0, m, NamedTuple(), kwargs)
         ),
         "RandomHAL1" => (
-        RandomHALRegressor(1, nλ, folds, m, NamedTuple()),
-        RandomHALBinaryClassifier(1, nλ, folds, m, NamedTuple())
+        RandomHALRegressor(1, m, NamedTuple(), kwargs),
+        RandomHALBinaryClassifier(1, m, NamedTuple(), kwargs)
         ),
         "RandomHAL_keeptreat0" => (
-        RandomHALRegressor(0, nλ, folds, m, (guaranteed_sections = sec,)),
-        RandomHALBinaryClassifier(0, nλ, folds, m, NamedTuple())
+        RandomHALRegressor(0, m, (guaranteed_sections = sec,), kwargs),
+        RandomHALBinaryClassifier(0, m, NamedTuple(), kwargs)
         ),
         "RandomHAL_keeptreat1" => (
-        RandomHALRegressor(1, nλ, folds, m, (guaranteed_sections = sec,)),
-        RandomHALBinaryClassifier(1, nλ, folds, m, NamedTuple())
+        RandomHALRegressor(1, m, (guaranteed_sections = sec,), kwargs),
+        RandomHALBinaryClassifier(1, m, NamedTuple(), kwargs)
         ),
         "RandomHAL_intdecay0" => (
-        RandomHALRegressor(0, nλ, folds, m, (guaranteed_sections = sec, interaction_order_weights = int_weight)),
-        RandomHALBinaryClassifier(0, nλ, folds, m, NamedTuple())
+        RandomHALRegressor(0, m, (guaranteed_sections = sec, interaction_order_weights = int_weight), kwargs),
+        RandomHALBinaryClassifier(0, m, (interaction_order_weights = int_weight,), kwargs)
         ),
         "RandomHAL_intdecay1" => (
-        RandomHALRegressor(1, nλ, folds, m, (guaranteed_sections = sec, interaction_order_weights = int_weight)),
-        RandomHALBinaryClassifier(1, nλ, folds, m, NamedTuple())
+        RandomHALRegressor(1, m, (guaranteed_sections = sec, interaction_order_weights = int_weight), kwargs),
+        RandomHALBinaryClassifier(1, m, (interaction_order_weights = int_weight,), kwargs)
         ),
         "HAL0" => (
-        HALRegressor(0, 0, nλ, folds),
-        HALBinaryClassifier(0, 0, nλ, folds)
+        HALRegressor(0, 0, kwargs),
+        HALBinaryClassifier(0, 0, kwargs)
         ),
         "HAL1" => (
-        HALRegressor(1, 0, nλ, folds),
-        HALBinaryClassifier(1, 0, nλ, folds)
+        HALRegressor(1, 0, kwargs),
+        HALBinaryClassifier(1, 0, kwargs)
         ),
         "HAL_minnonzero0" => (
-        HALRegressor(0, minnonzero, nλ, folds),
-        HALBinaryClassifier(0, minnonzero, nλ, folds)
+        HALRegressor(0, minnonzero, kwargs),
+        HALBinaryClassifier(0, minnonzero, kwargs)
         ),
         "HAL_minnonzero1" => (
-        HALRegressor(1, minnonzero, nλ, folds),
-        HALBinaryClassifier(1, minnonzero, nλ, folds)
+        HALRegressor(1, minnonzero, kwargs),
+        HALBinaryClassifier(1, minnonzero, kwargs)
         )
     ])
 end

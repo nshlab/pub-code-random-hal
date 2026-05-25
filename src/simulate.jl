@@ -1,5 +1,5 @@
 
-function binary_scm(d, d_first, ρ = 0.05, treat_shift = 2)
+function binary_scm(d, d_first, ρ = 0.05, treat_shift = 1)
 
     dgp = @dgp(
         L ~ SklarDist(GaussianCopula(d, ρ), Tuple(fill(Beta(2,2), d))),

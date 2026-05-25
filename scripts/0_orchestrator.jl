@@ -2,11 +2,11 @@ using DrWatson
 @quickactivate :RandomHALsims
 
 # Get the SLURM job id
-id = parse(Int, ARGS[1])
+id, idmin, idmax = parse(Int, ARGS[1], ARGS[2], ARGS[3])
 
 arg_dicts = Dict(
-    :i => collect(1:100),
-    :n => [100, 400, 900, 1600],
+    :i => collect(idmin:idmax),
+    :n => [100, 400, 900, 1600, 2500],
     :dgp => ["3_small_comparison.jl", "4_large_randomhal.jl"]
 )
 
