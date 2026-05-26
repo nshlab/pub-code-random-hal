@@ -8,7 +8,7 @@ i = ARGS[2]
 function make_comparison(n, d)
 
     # Parameters for LASSO fitting
-    kwargs = (standardize = false, nlambda = 100, folds = 10,)
+    kwargs = (standardize = false, nlambda = 100, nfolds = 10,)
 
 
     # Parameter to control how many basis functions are sampled in RandomHAL
