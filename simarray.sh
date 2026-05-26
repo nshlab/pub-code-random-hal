@@ -9,4 +9,4 @@
 #SBATCH --array=1-100
 
 # Put what you want to do with singularity below
-srun -c ${SLURM_CPUS_PER_TASK} singularity exec julia_latest.sif julia 'scripts/0_orchestrator.jl' ${SLURM_ARRAY_TASK_ID} ${SLURM_ARRAY_TASK_MIN} ${SLURM_ARRAY_TASK_MAX}
+srun -c ${SLURM_CPUS_PER_TASK} singularity exec ../julia_latest.sif julia 'scripts/0_orchestrator.jl' ${SLURM_ARRAY_TASK_ID} ${SLURM_ARRAY_TASK_MIN} ${SLURM_ARRAY_TASK_MAX}

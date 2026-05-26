@@ -2,7 +2,9 @@ using DrWatson
 @quickactivate :RandomHALsims
 
 # Get the SLURM job id
-id, idmin, idmax = parse(Int, ARGS[1], ARGS[2], ARGS[3])
+id = parse(Int, ARGS[1])
+idmin = parse(Int, ARGS[2])
+idmax = parse(Int, ARGS[3])
 
 arg_dicts = Dict(
     :i => collect(idmin:idmax),
