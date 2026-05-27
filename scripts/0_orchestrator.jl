@@ -1,6 +1,6 @@
 using DrWatson
 @quickactivate :RandomHALsims
-using RandomHAL
+using Random
 
 # Get the SLURM job id
 id = parse(Int, ARGS[1])
@@ -23,7 +23,9 @@ println("Running DGP $(dgp), n = $(n), simulation $(i) ")
 empty!(ARGS)
 append!(ARGS, [string(n), string(i)])
 
-# Run the appropriate script, each with a different seed
+# Set a different but deterministic seed for each job
 Random.seed!(10000 + id)
+
+# Run the appropriate script
 include(dgp)
 
