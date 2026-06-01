@@ -25,24 +25,9 @@ function configure_axes!(layout)
             # Tighten the space between facets
             colgap!(child, 10)
             rowgap!(child, 10)
-            
-            # --- FIX: Loop over this sub-grid's elements to find and delete facet titles ---
-            for sub_spec in child.content
-                sub_child = sub_spec.content
-                
-                # AlgebraOfGraphics places horizontal facet titles at row 0 (or row max+1)
-                # and vertical facet titles at column max+1. 
-                if sub_child isa Label
-                    # Zero out the text, turn off visibility, and collapse its layout footprint
-                    sub_child.text = ""
-                    sub_child.visible = false
-                    sub_child.tellwidth = false
-                    sub_child.tellheight = false
-                end
-            end
-            
+
             # Continue scanning deeper layouts if nested
-            configure_axes!(child)              
+            configure_axes!(child)
         end
     end
 end
@@ -119,16 +104,16 @@ function generate_plots(df_raw, str, eff_bound, models, names)
 
     p1 = template * 
         mapping(:n => "", :mean_bias, color=:model => "", linestyle=:smoothness, marker=:smoothness)
-    ag = draw!(fig[1, 1], p1, hidden_scales, axis=create_axis_ose(ns, "Bias"), facet = (; linkxaxes = :none))
+    ag = draw!(fig[1, 1], p1, hidden_scales, axis=(aspect=1, xticks=ns, ylabel="Bias"), facet = (; linkxaxes = :none))
 
     p2 = template * 
         mapping(:n => "", :scaled_bias, color=:model => "", linestyle=:smoothness, marker=:smoothness)
-    ag = draw!(fig[1, 2], p2, hidden_scales, axis=create_axis_ose(ns, "Scaled bias"), facet = (; linkxaxes = :none))
+    ag = draw!(fig[1, 2], p2, hidden_scales, axis=(aspect=1, xticks=ns, ylabel="Scaled bias"), facet = (; linkxaxes = :none))
 
     p3 = template * 
         mapping(:n => "", :scaled_mse, color=:model => "", linestyle=:smoothness, marker=:smoothness)# + 
         #(visual(HLines) * mapping([eff_bound]))
-    ag = draw!(fig[2, 1], p3, hidden_scales, axis=create_axis_ose(ns, "Scaled MSE / Eff. Bound"), facet = (; linkxaxes = :none))
+    ag = draw!(fig[2, 1], p3, hidden_scales, axis=(aspect=1, xticks=ns, ylabel="Scaled MSE / Eff. Bound"), facet = (; linkxaxes = :none))
 
     p4 = (template * mapping(:n => "", :coverage, color=:model => "", linestyle=:smoothness, marker=:smoothness)) + 
      (visual(HLines) * mapping([0.95])) # Single positional argument as required by HLines
@@ -148,7 +133,7 @@ function generate_plots(df_raw, str, eff_bound, models, names)
     fig = Figure(; size=(1000, 310))
     p = template * 
         mapping(:n => "", :mean_cate_mse, color=:model => "", linestyle=:smoothness, marker=:smoothness)
-    draw!(fig[1,1:3], p, hidden_scales, axis=(xticks=ns, xlabel = "Sample size", ylabel="Out-of-sample MSE"))
+    draw!(fig[1,1:3], p, hidden_scales, axis=(xticks=ns, ylabel="Out-of-sample MSE"))
     fig[0, 2] = Label(fig, "CATE Estimate", fontsize = 18, font = :bold)
     legend!(fig[2, 1:3], ag, orientation=:vertical, tellheight=true)
     configure_axes!(fig.layout)
@@ -166,8 +151,8 @@ function generate_plots(df_raw, str, eff_bound, models, names)
     p2 = template * 
         mapping(:n => "", :mean_time_propensity, color=:model => "", linestyle=:smoothness, marker=:smoothness)
 
-    ag = draw!(fig[1, 1:3], p1, hidden_scales, axis=create_axis_time(ns))
-    ag = draw!(fig[3, 1:3], p2, hidden_scales, axis=create_axis_time(ns))
+    ag = draw!(fig[1, 1:3], p1, hidden_scales, axis=(aspect = 1, xticks=ns, ylabel="Training time (seconds)"))
+    ag = draw!(fig[3, 1:3], p2, hidden_scales, axis=(aspect = 1, xticks=ns, ylabel="Training time (seconds)"))
     legend!(fig[4, 1:3], ag, orientation=:vertical, tellheight=true)
     fig[0, 2] = Label(fig, "Outcome regression", fontsize = 18, font = :bold)
     fig[2, 2] = Label(fig, "Propensity score", fontsize = 18, font = :bold)
