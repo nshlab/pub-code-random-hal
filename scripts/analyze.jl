@@ -4,6 +4,7 @@ using DrWatson
 using CSV
 using DataFrames
 using DataFramesMeta
+using CategoricalArrays
 using Tables
 using Statistics
 using CairoMakie
@@ -12,7 +13,7 @@ using AlgebraOfGraphics
 create_axis_time(ns) = (aspect = 1, xticks=ns, xlabel = "Sample size", ylabel="Training time (seconds)")
 create_axis_ose(ns, ylabel) = (aspect=1, xticks=ns, xlabel = "Sample size", ylabel=ylabel)
 create_axis_mse(ns, title) = (xticks=ns, xlabel = "Sample size", ylabel="Out-of-sample MSE", title = title)
-function configure_axes!(layout)
+function configure_layout_axes!(layout, colgap, rowgap)
     for spec in layout.content
         child = spec.content
         
@@ -23,19 +24,21 @@ function configure_axes!(layout)
             
         elseif child isa GridLayout
             # Tighten the space between facets
-            colgap!(child, 10)
-            rowgap!(child, 10)
+            colgap!(child, colgap)
+            rowgap!(child, rowgap)
 
             # Continue scanning deeper layouts if nested
-            configure_axes!(child)
+            configure_layout_axes!(child, colgap, rowgap)
         end
     end
 end
+configure_layout_axes!(layout) = configure_layout_axes!(layout, 10, 10)
 
-function generate_plots(df_raw, str, eff_bound, models, names)
+function generate_plots(df_raw, str, eff_bound, models, names, max_n = 1600)
     ns = unique(df_raw.n)
     df_raw[!, "upper"] = df_raw.ose .+ 1.96 .* sqrt.(df_raw.ose_var)
     df_raw[!, "lower"] = df_raw.ose .- 1.96 .* sqrt.(df_raw.ose_var)
+    df_raw
 
     df = @chain df_raw begin
         @groupby(:n, :model_name)
@@ -61,7 +64,10 @@ function generate_plots(df_raw, str, eff_bound, models, names)
     df[!, "scaled_mse"] = df.n .* ((df.mean_bias .^ 2) .+ df.mc_var) ./ eff_bound
 
     df = filter(row -> row.model in models, df)
+    df = filter(row -> row.n <= max_n, df)
+
     df[!, :model] = [names[findfirst(==(m), models)] for m in df.model]
+    df[!, :model] = CategoricalArrays.categorical(df.model; ordered=true, levels=names)
     
     # Build the scale config to hide BOTH LineStyle and Marker from the legend engine
     # This is because we already facet by smoothness
@@ -70,8 +76,23 @@ function generate_plots(df_raw, str, eff_bound, models, names)
         LineStyle = (; legend = false),
         Marker = (; legend = false)
     )
-    template = data(df) * visual(Lines, markersize=8) * visual(ScatterLines, markersize=8) * mapping(layout = :smoothness)
-    set_theme!(palette = (color = [:black, "#0f5575", "#ffa600", "#4e7647", "#00aaf5", "#002e5c"],))
+    template = data(df) * visual(Lines, linewidth=2.5) * visual(ScatterLines, markersize=10, linewidth=2.5) * mapping(layout = :smoothness)
+    set_theme!(
+        fontsize = 20,#16
+        linewidth = 5,#2.5
+        markersize = 20,#10
+        Axis = (
+            xlabelsize = 20,
+            ylabelsize = 20,
+            xticklabelsize = 18,
+            yticklabelsize = 18
+        ),
+        Legend = (
+            labelsize = 20,
+            titlesize = 20
+        ),
+        palette = (color = ["#0f5575", "#ffa600", "#4e7647", :black, "#00aaf5", "#002e5c"],)
+    )
 
     # Figure 1
     fig = Figure(; size=(640, 640))
@@ -85,10 +106,10 @@ function generate_plots(df_raw, str, eff_bound, models, names)
     ag = draw!(fig[1, 1:3], p1, hidden_scales; axis=(aspect = 1, xticks=ns, ylabel="Out-of-sample MSE"), facet = (; linkxaxes = :none))
     ag = draw!(fig[3, 1:3], p2, hidden_scales; axis=(aspect = 1, xticks=ns, ylabel="Out-of-sample MSE"), facet = (; linkxaxes = :none))
 
-    fig[0, 2] = Label(fig, "Outcome regression", fontsize = 18, font = :bold)
-    fig[2, 2] = Label(fig, "Propensity score", fontsize = 18, font = :bold)
+    fig[0, 2] = Label(fig, "Outcome regression", fontsize = 20, font = :bold)
+    fig[2, 2] = Label(fig, "Propensity score", fontsize = 20, font = :bold)
     legend!(fig[4, 1:3], ag, orientation=:vertical, tellheight=true)
-    configure_axes!(fig.layout)
+    configure_layout_axes!(fig.layout, 20, 10)
 
     # reduce vertical gap between title row and plots
     rowsize!(fig.layout, 0, 10)
@@ -115,15 +136,15 @@ function generate_plots(df_raw, str, eff_bound, models, names)
         #(visual(HLines) * mapping([eff_bound]))
     ag = draw!(fig[2, 1], p3, hidden_scales, axis=(aspect=1, xticks=ns, ylabel="Scaled MSE / Eff. Bound"), facet = (; linkxaxes = :none))
 
-    p4 = (template * mapping(:n => "", :coverage, color=:model => "", linestyle=:smoothness, marker=:smoothness)) + 
-     (visual(HLines) * mapping([0.95])) # Single positional argument as required by HLines
+    p4 = (visual(HLines) * mapping([0.95])) + (template * mapping(:n => "", :coverage, color=:model => "", linestyle=:smoothness, marker=:smoothness))
+      # Single positional argument as required by HLines
 
     ag = draw!(fig[2, 2], p4, hidden_scales, 
           axis=(aspect=1, xticks=ns, yticks = [0.0, 0.5, 0.95], ylabel="Coverage", limits=(nothing, (0.0, 1.0))), 
           facet = (; linkxaxes = :none))
     legend!(fig[3, 1:2], ag, orientation=:vertical, tellheight=true)
     
-    configure_axes!(fig.layout)
+    configure_layout_axes!(fig.layout)
     rowsize!(fig.layout, 1, 300)
     rowsize!(fig.layout, 2, 300)
     resize_to_layout!(fig)
@@ -134,9 +155,9 @@ function generate_plots(df_raw, str, eff_bound, models, names)
     p = template * 
         mapping(:n => "", :mean_cate_mse, color=:model => "", linestyle=:smoothness, marker=:smoothness)
     draw!(fig[1,1:3], p, hidden_scales, axis=(xticks=ns, ylabel="Out-of-sample MSE"))
-    fig[0, 2] = Label(fig, "CATE Estimate", fontsize = 18, font = :bold)
+    fig[0, 2] = Label(fig, "CATE Estimate", fontsize = 20, font = :bold)
     legend!(fig[2, 1:3], ag, orientation=:vertical, tellheight=true)
-    configure_axes!(fig.layout)
+    configure_layout_axes!(fig.layout, 20, 10)
 
     rowsize!(fig.layout, 0, 10)
     rowsize!(fig.layout, 1, 300)
@@ -154,9 +175,9 @@ function generate_plots(df_raw, str, eff_bound, models, names)
     ag = draw!(fig[1, 1:3], p1, hidden_scales, axis=(aspect = 1, xticks=ns, ylabel="Training time (seconds)"))
     ag = draw!(fig[3, 1:3], p2, hidden_scales, axis=(aspect = 1, xticks=ns, ylabel="Training time (seconds)"))
     legend!(fig[4, 1:3], ag, orientation=:vertical, tellheight=true)
-    fig[0, 2] = Label(fig, "Outcome regression", fontsize = 18, font = :bold)
-    fig[2, 2] = Label(fig, "Propensity score", fontsize = 18, font = :bold)
-    configure_axes!(fig.layout)
+    fig[0, 2] = Label(fig, "Outcome regression", fontsize = 20, font = :bold)
+    fig[2, 2] = Label(fig, "Propensity score", fontsize = 20, font = :bold)
+    configure_layout_axes!(fig.layout, 20, 10)
     rowsize!(fig.layout, 0, 10)
     rowsize!(fig.layout, 1, 300)
     rowsize!(fig.layout, 2, 10)
@@ -168,8 +189,8 @@ end
 filenames = [
     "3_small_comparison-combined.csv"
 ]
-models = ["HAL", "RandomHAL", "RandomHAL_intdecay", "RandomHAL_keeptreat"]
-names = ["HAL", "RandomHAL — uniform sampling", "RandomHAL — low-order interactions more likely", "RandomHAL — always sample treatment"]
+models = ["RandomHAL", "RandomHAL_intdecay", "RandomHAL_keeptreat", "HAL"]
+names = ["RandomHAL — uniform sampling", "RandomHAL — low-order interactions more likely", "RandomHAL — always sample treatment", "HAL"]
 
 result = [CSV.read(datadir(name), DataFrame) for name in filenames]
 df_raw = sort(DataFrame(reduce(vcat, result)), :n)
