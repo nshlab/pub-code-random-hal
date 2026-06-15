@@ -185,8 +185,106 @@ function generate_plots(df_raw, str, eff_bound, models, names, max_n = 1600)
     save(plotsdir(str*"time.png"), fig)
 end
 
+function generate_pred_plots(df_raw, str, models, names, d, d_first)
+
+    # Get the true CATE function for the DGP
+    scm, cate = binary_scm(d, d_first)
+
+    # Compute summary statistics across the grid and filter the data
+    df = @chain df_raw begin
+            @groupby(:n, :model_name, :C)
+            @combine(
+                :mean_pred = mean(:preds),
+                :var_pred = var(:preds)
+            )
+        end
+    df[!, "upper"] = df.mean_pred .+ (1.96 .* sqrt.(df.var_pred))
+    df[!, "lower"] = df.mean_pred .- (1.96 .* sqrt.(df.var_pred))
+
+    df[!, "smoothness"] = "Smoothness = " .* SubString.(df.model_name, length.(df.model_name))
+    df[!, "model"]  = SubString.(df.model_name, 1, length.(df.model_name) .- 1)
+    df[!, :model] = [names[findfirst(==(m), models)] for m in df.model]
+    df[!, :model] = CategoricalArrays.categorical(df.model; ordered=true, levels=vcat(["True CATE"], names))
+
+    df0 = filter(row -> (row.model == "RandomHAL — uniform sampling") & (row.smoothness == "Smoothness = 0"), df)
+    df1 = filter(row -> (row.model == "RandomHAL — uniform sampling") & (row.smoothness == "Smoothness = 1"), df)
+
+    # Create staircase effect for df0 by duplicating each row
+    df0_sorted = sort(df0, :C)
+    df0_stairs = []
+    for i in 1:nrow(df0_sorted)
+        row = df0_sorted[i, :]
+        push!(df0_stairs, row)
+        if i < nrow(df0_sorted)
+            next_row = (n = row.n, model_name = row.model_name, var_pred = row.var_pred, smoothness = row.smoothness, model = row.model, C = df0_sorted[i+1, :C], mean_pred = row.mean_pred, upper = row.upper, lower = row.lower)
+            push!(df0_stairs, next_row)
+        end
+    end
+    df0 = DataFrame(df0_stairs)
+
+    # Set up plotting
+    set_theme!(
+        fontsize = 20,#16
+        linewidth = 5,#2.5
+        markersize = 20,#10
+        Axis = (
+            xlabelsize = 20,
+            ylabelsize = 20,
+            xticklabelsize = 18,
+            yticklabelsize = 18
+        ),
+        Legend = (
+            labelsize = 20,
+            titlesize = 20
+        ),
+        palette = (color = [:black, "#0f5575", "#ffa600"],)
+    )
+
+    fig = Figure(; size=(1200, 500))
+    hidden_scales = scales(
+        LineStyle = (; legend = false),
+    )
+
+    # Create AlgebraOfGraphics templates and plots for the different smoothness levels
+    mean_template0 = data(df0) * visual(Lines, linewidth=2.5)
+    mean_template1 = data(df1) * visual(Lines, linewidth=2.5)
+    cb_template0 = data(df0) * visual(Band, alpha = 0.3)
+    cb_template1 = data(df1) * visual(Band, alpha = 0.3)
+
+    p0 = (mean_template0 * mapping(:C, :mean_pred, color=:model, linestyle=:smoothness)) +
+        (cb_template0 * mapping(:C, :upper, :lower, color=:model))
+    p1 = (mean_template1 * mapping(:C, :mean_pred, color=:model, linestyle=:smoothness)) +
+        (cb_template1 * mapping(:C, :upper, :lower, color=:model))
+
+    # Plot the truth
+    C_grid = unique(df.C)
+    true_df = DataFrame((C = C_grid, true_cate = cate.(C_grid)))
+    true_df[!, "model"] = CategoricalArrays.categorical(fill("True CATE", nrow(true_df)); ordered=true, levels=vcat(["True CATE"], names))
+    true_template = data(true_df) * visual(Lines, linewidth=2.5)
+    p_true = true_template * mapping(:C, :true_cate, color=:model)
+
+    # Combine the plots together
+    ag = draw!(fig[1,1], p_true + p0, hidden_scales, axis=(xlabel = "Covariate value", ylabel="CATE", limits = ((0.0, 1.0), (-2.1, 1.1))))
+    ag = draw!(fig[1,2], p_true + p1, hidden_scales, axis=(xlabel = "Covariate value", ylabel="", limits = ((0.0, 1.0), (-2.1, 1.1))))
+
+    fig[0, 1] = Label(fig, "Smoothness = 0", fontsize = 20, font = :bold)
+    fig[0, 2] = Label(fig, "Smoothness = 1", fontsize = 20, font = :bold)
+
+    legend!(fig[2, 1:2], ag, orientation=:vertical, tellheight=true)
+
+    colsize!(fig.layout, 1, 400)
+    colsize!(fig.layout, 2, 400)
+    rowsize!(fig.layout, 0, 10)
+    rowsize!(fig.layout, 1, 240)
+    rowsize!(fig.layout, 2, 100)
+
+    resize_to_layout!(fig)
+    save(plotsdir(str * "cate_preds.png"), fig)
+end
+
+### Small Comparison ###
 filenames = [
-    "3_small_comparison-combined.csv"
+    "3_small_comparison-combined-metrics.csv"
 ]
 models = ["RandomHAL", "RandomHAL_intdecay", "RandomHAL_keeptreat", "HAL"]
 names = ["RandomHAL — uniform sampling", "RandomHAL — low-order interactions more likely", "RandomHAL — always sample treatment", "HAL"]
@@ -196,11 +294,20 @@ df_raw = sort(DataFrame(reduce(vcat, result)), :n)
 
 generate_plots(df_raw, "small_", mean(df_raw.true_eff_bound), models, names)
 
-
-
-### Large variables test ###
+### Small Comparison CATE ###
 filenames = [
-    "testing-combined-metrics.csv"
+    "3_small_comparison-combined-preds.csv"
+]
+
+result = [CSV.read(datadir(name), DataFrame) for name in filenames]
+df_raw = sort(DataFrame(reduce(vcat, result)), :n)
+
+generate_pred_plots(df_raw, "small_", models, names, 4, 4)
+
+
+### Large Comparison ###
+filenames = [
+    "4_large_randomhal-combined-metrics.csv"
 ]
 
 result = [CSV.read(datadir(name), DataFrame) for name in filenames]
@@ -212,101 +319,17 @@ names = ["RandomHAL — uniform sampling", "RandomHAL — low-order interactions
 generate_plots(df_raw, "large_", mean(df_raw.true_eff_bound), models, names)
 
 
-### CATE Plots ###
+### Large Comparison CATE ###
 filenames = [
-    "testing-combined-preds.csv"
+    "4_large_randomhal-combined-preds.csv"
 ]
 
 result = [CSV.read(datadir(name), DataFrame) for name in filenames]
 df_raw = sort(DataFrame(reduce(vcat, result)), :n)
 
-scm, cate = binary_scm(3, 3)
-df = @chain df_raw begin
-        @groupby(:n, :model_name, :C)
-        @combine(
-            :mean_pred = mean(:preds),
-            :var_pred = var(:preds)
-        )
-    end
-df[!, "upper"] = df.mean_pred .+ (1.96 .* sqrt.(df.var_pred))
-df[!, "lower"] = df.mean_pred .- (1.96 .* sqrt.(df.var_pred))
-
-df[!, "smoothness"] = "Smoothness = " .* SubString.(df.model_name, length.(df.model_name))
-df[!, "model"]  = SubString.(df.model_name, 1, length.(df.model_name) .- 1)
-df[!, :model] = [names[findfirst(==(m), models)] for m in df.model]
-df[!, :model] = CategoricalArrays.categorical(df.model; ordered=true, levels=vcat(["True CATE"], names))
-
-df0 = filter(row -> (row.model == "RandomHAL — uniform sampling") & (row.smoothness == "Smoothness = 0"), df)
-df1 = filter(row -> (row.model == "RandomHAL — uniform sampling") & (row.smoothness == "Smoothness = 1"), df)
-
-# Create staircase effect for df0 by duplicating each row
-df0_sorted = sort(df0, :C)
-df0_stairs = []
-for i in 1:nrow(df0_sorted)
-    row = df0_sorted[i, :]
-    push!(df0_stairs, row)
-    if i < nrow(df0_sorted)
-        next_row = (n = row.n, model_name = row.model_name, var_pred = row.var_pred, smoothness = row.smoothness, model = row.model, C = df0_sorted[i+1, :C], mean_pred = row.mean_pred, upper = row.upper, lower = row.lower)
-        push!(df0_stairs, next_row)
-    end
-end
-df0 = DataFrame(df0_stairs)
-
-set_theme!(
-    fontsize = 20,#16
-    linewidth = 5,#2.5
-    markersize = 20,#10
-    Axis = (
-        xlabelsize = 20,
-        ylabelsize = 20,
-        xticklabelsize = 18,
-        yticklabelsize = 18
-    ),
-    Legend = (
-        labelsize = 20,
-        titlesize = 20
-    ),
-    palette = (color = [:black, "#0f5575", "#ffa600"],)
-)
-
-fig = Figure(; size=(1200, 500))
-hidden_scales = scales(
-    LineStyle = (; legend = false),
-)
+generate_pred_plots(df_raw, "large_", models, names, 40, 8)
 
 
-mean_template0 = data(df0) * visual(Lines, linewidth=2.5)
-mean_template1 = data(df1) * visual(Lines, linewidth=2.5)
-cb_template0 = data(df0) * visual(Band, alpha = 0.3)
-cb_template1 = data(df1) * visual(Band, alpha = 0.3)
-
-
-p0 = (mean_template0 * mapping(:C, :mean_pred, color=:model, linestyle=:smoothness)) +
-     (cb_template0 * mapping(:C, :upper, :lower, color=:model))
-p1 = (mean_template1 * mapping(:C, :mean_pred, color=:model, linestyle=:smoothness)) +
-     (cb_template1 * mapping(:C, :upper, :lower, color=:model))
-
-C_grid = unique(df.C)
-true_df = DataFrame((C = C_grid, true_cate = cate.(C_grid)))
-true_df[!, "model"] = CategoricalArrays.categorical(fill("True CATE", nrow(true_df)); ordered=true, levels=vcat(["True CATE"], names))
-true_template = data(true_df) * visual(Lines, linewidth=2.5)
-p_true = true_template * mapping(:C, :true_cate, color=:model)
-ag = draw!(fig[1,1], p_true + p0, hidden_scales, axis=(xlabel = "Covariate value", ylabel="CATE"))
-ag = draw!(fig[1,2], p_true + p1, hidden_scales, axis=(xlabel = "Covariate value", ylabel=""))
-
-fig[0, 1] = Label(fig, "Smoothness = 0", fontsize = 20, font = :bold)
-fig[0, 2] = Label(fig, "Smoothness = 1", fontsize = 20, font = :bold)
-
-legend!(fig[2, 1:2], ag, orientation=:vertical, tellheight=true)
-
-colsize!(fig.layout, 1, 400)
-colsize!(fig.layout, 2, 400)
-rowsize!(fig.layout, 0, 10)
-rowsize!(fig.layout, 1, 240)
-rowsize!(fig.layout, 2, 100)
-
-resize_to_layout!(fig)
-save(plotsdir("testing_cate.png"), fig)
 
 
 
