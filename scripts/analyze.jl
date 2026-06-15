@@ -211,18 +211,3 @@ names = ["RandomHAL — uniform sampling", "RandomHAL — low-order interactions
 generate_plots(df_raw, "large_", mean(df_raw.true_eff_bound), models, names)
 
 
-df = @chain df_raw begin
-    @groupby(:n, :model_name)
-    @combine(:mean_mse_outcome = mean(:mse_outcome), 
-            :mean_mse_propensity = mean(:mse_propensity), 
-            :mean_bias = mean(:ose) .- mean(:true_ate), 
-            :mean_ose_var = mean(:ose_var),
-            :mc_var = var(:ose),
-            :mean_cate_mse = mean(:cate_mse),
-            :mean_time_outcome = mean(:time_outcome),
-            :mean_time_propensity = mean(:time_propensity)#,
-            #:coverage = mean((:true_ate .< :upper) .&& (:true_ate .> :lower))
-            )
-end
-
-

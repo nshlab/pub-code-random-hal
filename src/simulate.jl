@@ -2,14 +2,20 @@
 function binary_scm(d, d_first, ρ = 0.05, treat_shift = 1)
 
     dgp = @dgp(
+        C ~ Beta(1,1),
         L ~ SklarDist(GaussianCopula(d, ρ), Tuple(fill(Beta(2,2), d))),
-        μ = (1 .+ 2 .* L[:, 1]) .* vec(mean(L[:,2:d_first] .- L[:,2:d_first] .^ (1/2), dims = 2)) .+ 0.5,
-        A ~ Bernoulli.(logistic.(2.5 .* μ)),
+        μ = 10 .* ((sin.(1.15*pi * C).^3 .+ C .^ 2) .* vec(mean(L[:,1:d_first] .^ (1/2) .- L[:,1:d_first], dims = 2)) .- 0.15),
+        A ~ Bernoulli.(logistic.(0.5 .* μ)),
         Y ~ Normal.((1 .+ treat_shift .* A) .* μ .+ 2, sqrt(0.5))
     )
 
     scm = StructuralCausalModel(dgp, :A, :Y)
-    cate(L) = treat_shift .* ((1 .+ 2 .* L[:, 1]) .* mean(vec(mean(L[:,2:d_first] .- (L[:,2:d_first] .^(1/2)), dims = 2))) .+ 0.5)
+
+    # Numerically approximate the mean part involving L integrated out by the CATE
+    monte_carlo = rand(dgp, 10^6)
+    partial_mean = mean(monte_carlo.L .^ (1/2) .- monte_carlo.L)
+
+    cate(C) = treat_shift .* 10 .* ((sin.(1.15*pi * C).^3 .+ C .^ 2) .* partial_mean .- 0.15)
     
     return scm, cate
 end
@@ -21,8 +27,9 @@ function safe_predict(mach, X,  miny, maxy)
     return preds
 end
 
-function simulate_binom(scm::StructuralCausalModel, cate, n::Int, modellist, dir, i)
+function simulate_binom(scm::StructuralCausalModel, cate, n::Int, modellist, dir, i, grid_size)
     result = []
+    grid_result = []
 
     true_ate, true_eff_bound = ate(scm)
 
@@ -32,7 +39,7 @@ function simulate_binom(scm::StructuralCausalModel, cate, n::Int, modellist, dir
     X = treatmentparents(ct)
     A = treatmentmatrix(ct)[:,1]
     y = responsematrix(ct)[:, 1]
-    X1 = (X1 = Tables.getcolumn(X, 1),)
+    C = (C = Tables.getcolumn(X, 1),)
     miny = minimum(y)
     maxy = maximum(y)
 
@@ -43,7 +50,8 @@ function simulate_binom(scm::StructuralCausalModel, cate, n::Int, modellist, dir
     Xtest = treatmentparents(cttest)
     Atest = treatmentmatrix(ct)[:,1]
     ytest = responsematrix(cttest)[:, 1]
-    X1test = (X1 = Tables.getcolumn(Xtest, 1),)
+    Ctest = (C = Tables.getcolumn(Xtest, 1),)
+
 
     # Get true function values
     true_conmean = conmean(scm, cttest, :Y)
@@ -78,10 +86,18 @@ function simulate_binom(scm::StructuralCausalModel, cate, n::Int, modellist, dir
             ose_var = var(eif) / n
 
             # Compute CATE
-            cate_mach = machine(outcome_model, X1, eif) |> fit!
-            cate_pred = MLJ.predict(cate_mach, X1test)
-            cate_mse = mean((cate_pred .- cate(Tables.matrix(Xtest))).^2)
+            cate_mach = machine(outcome_model, C, eif) |> fit!
+            cate_pred = MLJ.predict(cate_mach, Ctest)
+            cate_mse = mean((cate_pred .- cate(Tables.matrix(Ctest.C))).^2)
 
+            # Get CATE predictions on a grid
+            C_grid = range(0, 1, grid_size)
+            cate_pred_grid = MLJ.predict(cate_mach, (C = C_grid,))
+
+            push!(grid_result, (
+                i = collect(1:grid_size), n = fill(n, grid_size), model_name = fill(model_pair[1], grid_size), preds = cate_pred_grid
+            ))
+            
             push!(result, (
                 n = n, model_name = model_pair[1], plugin = plugin,
                 mse_outcome = mse_outcome, mse_propensity = mse_propensity, 
@@ -93,10 +109,15 @@ function simulate_binom(scm::StructuralCausalModel, cate, n::Int, modellist, dir
     end
 
     # Save results as CSV after each thread completes
-    sv = "n=" * string(n) * "_s=" * string(i) * ".csv"
+    sv = "n=" * string(n) * "_s=" * string(i)
+    sv_grid = sv * "_preds.csv" 
+    sv *= ".csv"
+
     output_dir = datadir(dir)
     isdir(output_dir) || mkpath(output_dir)
-    CSV.write(joinpath(output_dir, sv), DataFrame(result))
 
+    CSV.write(joinpath(output_dir, sv_grid), reduce(vcat, DataFrame(gr) for gr in grid_result))
+    CSV.write(joinpath(output_dir, sv), DataFrame(result))
+    
     return result
 end

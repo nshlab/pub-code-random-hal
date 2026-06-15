@@ -53,9 +53,10 @@ end
 # Define the SCM for this DGP
 d = 40
 scm, cate = binary_scm(d, 8)
+grid_size = 101
 
 # Save results to directory with 
 dir = basename(@__FILE__)[1:(end-3)]
 
 # Run the simulation
-simulate_binom(scm, cate, n, make_comparison(n, d), dir, i)
+simulate_binom(scm, cate, n, make_comparison(n, d), dir, i, grid_size)

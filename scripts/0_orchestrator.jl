@@ -9,7 +9,7 @@ id = parse(Int, ARGS[1])
 
 arg_dicts = Dict(
     :i => collect(1:500),
-    :n => [100, 400, 900, 1600, 2500],
+    :n => [100, 400, 900, 1600],
     :dgp => ["3_small_comparison.jl", "4_large_randomhal.jl"]
 )
 
