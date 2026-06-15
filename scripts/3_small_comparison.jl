@@ -11,7 +11,7 @@ function make_comparison(n, d)
 
     # Parameter to control how many basis functions are sampled in RandomHAL
     m = Int(round(0.5 * n * log(n)))
-    sec = [[d+1]]
+    sec = [[d+2]]
 
     # Parameter to control minimum number of nonzero entries
     minnonzero = Int(floor(sqrt(n)))

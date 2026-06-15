@@ -88,14 +88,14 @@ function simulate_binom(scm::StructuralCausalModel, cate, n::Int, modellist, dir
             # Compute CATE
             cate_mach = machine(outcome_model, C, eif) |> fit!
             cate_pred = MLJ.predict(cate_mach, Ctest)
-            cate_mse = mean((cate_pred .- cate(Tables.matrix(Ctest.C))).^2)
+            cate_mse = mean((cate_pred .- cate(Ctest.C)).^2)
 
             # Get CATE predictions on a grid
             C_grid = range(0, 1, grid_size)
             cate_pred_grid = MLJ.predict(cate_mach, (C = C_grid,))
 
             push!(grid_result, (
-                i = collect(1:grid_size), n = fill(n, grid_size), model_name = fill(model_pair[1], grid_size), preds = cate_pred_grid
+                C = C_grid, n = fill(n, grid_size), model_name = fill(model_pair[1], grid_size), preds = cate_pred_grid
             ))
             
             push!(result, (
@@ -111,7 +111,7 @@ function simulate_binom(scm::StructuralCausalModel, cate, n::Int, modellist, dir
     # Save results as CSV after each thread completes
     sv = "n=" * string(n) * "_s=" * string(i)
     sv_grid = sv * "_preds.csv" 
-    sv *= ".csv"
+    sv *= "_metrics.csv"
 
     output_dir = datadir(dir)
     isdir(output_dir) || mkpath(output_dir)

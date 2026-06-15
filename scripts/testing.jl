@@ -1,8 +1,9 @@
+using DrWatson
+@quickactivate :RandomHALsims
+using Random
+
 using RandomHAL
 using StatsBase
-
-n = parse(Int, ARGS[1])
-i = ARGS[2]
 
 # Define the nuisance estimators for this simulation and DGP combination
 function make_comparison(n, d)
@@ -51,12 +52,14 @@ function make_comparison(n, d)
 end
 
 # Define the SCM for this DGP
-d = 40
-scm, cate = binary_scm(d, 8)
+d = 3
+scm, cate = binary_scm(d, d)
 grid_size = 101
 
 # Save results to directory with 
 dir = basename(@__FILE__)[1:(end-3)]
 
 # Run the simulation
+n = 400
+i = 3
 simulate_binom(scm, cate, n, make_comparison(n, d), dir, i, grid_size)
