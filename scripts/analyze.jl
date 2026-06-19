@@ -1,6 +1,7 @@
 using DrWatson
 @quickactivate "RandomHALsims"
 
+using RandomHALsims
 using CSV
 using DataFrames
 using DataFramesMeta
@@ -185,7 +186,7 @@ function generate_plots(df_raw, str, eff_bound, models, names, max_n = 1600)
     save(plotsdir(str*"time.png"), fig)
 end
 
-function generate_pred_plots(df_raw, str, models, names, d, d_first)
+function generate_pred_plots(df_raw, str, models, names, d, d_first, n)
 
     # Get the true CATE function for the DGP
     scm, cate = binary_scm(d, d_first)
@@ -206,8 +207,8 @@ function generate_pred_plots(df_raw, str, models, names, d, d_first)
     df[!, :model] = [names[findfirst(==(m), models)] for m in df.model]
     df[!, :model] = CategoricalArrays.categorical(df.model; ordered=true, levels=vcat(["True CATE"], names))
 
-    df0 = filter(row -> (row.model == "RandomHAL — uniform sampling") & (row.smoothness == "Smoothness = 0"), df)
-    df1 = filter(row -> (row.model == "RandomHAL — uniform sampling") & (row.smoothness == "Smoothness = 1"), df)
+    df0 = filter(row -> (row.model == "RandomHAL — uniform sampling") & (row.smoothness == "Smoothness = 0") & (row.n == n), df)
+    df1 = filter(row -> (row.model == "RandomHAL — uniform sampling") & (row.smoothness == "Smoothness = 1") & (row.n == n), df)
 
     # Create staircase effect for df0 by duplicating each row
     df0_sorted = sort(df0, :C)
@@ -286,8 +287,8 @@ end
 filenames = [
     "3_small_comparison-combined-metrics.csv"
 ]
-models = ["RandomHAL", "RandomHAL_intdecay", "RandomHAL_keeptreat", "HAL"]
-names = ["RandomHAL — uniform sampling", "RandomHAL — low-order interactions more likely", "RandomHAL — always sample treatment", "HAL"]
+models = ["RandomHAL", "RandomHAL_intdecay", "RandomHAL_keeptreat", "HAL"]#, "HAL_minnonzero"]
+names = ["RandomHAL — uniform sampling", "RandomHAL — low-order interactions more likely", "RandomHAL — always sample treatment", "HAL"]#, "HAL  — filter low nonzeros"]
 
 result = [CSV.read(datadir(name), DataFrame) for name in filenames]
 df_raw = sort(DataFrame(reduce(vcat, result)), :n)
@@ -302,7 +303,7 @@ filenames = [
 result = [CSV.read(datadir(name), DataFrame) for name in filenames]
 df_raw = sort(DataFrame(reduce(vcat, result)), :n)
 
-generate_pred_plots(df_raw, "small_", models, names, 4, 4)
+generate_pred_plots(df_raw, "small_", models, names, 4, 4, 1600)
 
 
 ### Large Comparison ###
@@ -327,7 +328,7 @@ filenames = [
 result = [CSV.read(datadir(name), DataFrame) for name in filenames]
 df_raw = sort(DataFrame(reduce(vcat, result)), :n)
 
-generate_pred_plots(df_raw, "large_", models, names, 40, 8)
+generate_pred_plots(df_raw, "large_", models, names, 40, 8, 1600)
 
 
 

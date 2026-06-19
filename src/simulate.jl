@@ -1,12 +1,12 @@
 
-function binary_scm(d, d_first, ρ = 0.05, treat_shift = 1)
+function binary_scm(d, d_first, ρ = 0.05, treat_shift = 0.5)
 
     dgp = @dgp(
         C ~ Beta(1,1),
         L ~ SklarDist(GaussianCopula(d, ρ), Tuple(fill(Beta(2,2), d))),
-        μ = 10 .* ((sin.(1.15*pi * C).^3 .+ C .^ 2) .* vec(mean(L[:,1:d_first] .^ (1/2) .- L[:,1:d_first], dims = 2)) .- 0.15),
-        A ~ Bernoulli.(logistic.(0.5 .* μ)),
-        Y ~ Normal.((1 .+ treat_shift .* A) .* μ .+ 2, sqrt(0.5))
+        μ = 8 .* ((sin.(1.15*pi * C).^3 .+ C .^ 2) .* vec(mean(L[:,1:d_first] .- L[:,1:d_first].^ (1/2), dims = 2)) .+ 0.15),
+        A ~ Bernoulli.(logistic.(0.6 .* μ)),
+        Y ~ Normal.((1 .+ treat_shift .* A) .* (μ .+ 1) .+ 2, sqrt(0.5))
     )
 
     scm = StructuralCausalModel(dgp, :A, :Y)
