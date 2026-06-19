@@ -4,18 +4,18 @@ function binary_scm(d, d_first, ρ = 0.05, treat_shift = 0.5)
     dgp = @dgp(
         C ~ Beta(1,1),
         L ~ SklarDist(GaussianCopula(d, ρ), Tuple(fill(Beta(2,2), d))),
-        μ = 8 .* ((sin.(1.15*pi * C).^3 .+ C .^ 2) .* vec(mean(L[:,1:d_first] .- L[:,1:d_first].^ (1/2), dims = 2)) .+ 0.15),
-        A ~ Bernoulli.(logistic.(0.6 .* μ)),
-        Y ~ Normal.((1 .+ treat_shift .* A) .* (μ .+ 1) .+ 2, sqrt(0.5))
+        μ = 10 .* ((sin.(1.15*pi * C).^3 .+ C .^ 2) .* vec(mean(L[:,1:d_first] .- L[:,1:d_first].^ (1/2), dims = 2)) .+ 0.4),
+        A ~ Bernoulli.(logistic.(0.6 .* (μ .- 2.5))),
+        Y ~ Normal.((1 .+ treat_shift .* A) .* μ .+ 2, 1)
     )
 
     scm = StructuralCausalModel(dgp, :A, :Y)
 
     # Numerically approximate the mean part involving L integrated out by the CATE
     monte_carlo = rand(dgp, 10^6)
-    partial_mean = mean(monte_carlo.L .- monte_carlo.L .^ (1/2))
+    partial_mean = mean(monte_carlo.L[:, 1:d_first] .- (monte_carlo.L[:, 1:d_first] .^ (1/2)))
 
-    cate(C) = treat_shift .* 8 .* ((sin.(1.15*pi * C).^3 .+ C .^ 2) .* partial_mean .+ 0.15)
+    cate(C) = treat_shift .* 10 .* ((sin.(1.15*pi * C).^3 .+ C .^ 2) .* partial_mean .+ 0.4)
     
     return scm, cate
 end

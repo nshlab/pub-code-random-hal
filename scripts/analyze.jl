@@ -287,8 +287,8 @@ end
 filenames = [
     "3_small_comparison-combined-metrics.csv"
 ]
-models = ["RandomHAL", "RandomHAL_intdecay", "RandomHAL_keeptreat", "HAL"]#, "HAL_minnonzero"]
-names = ["RandomHAL — uniform sampling", "RandomHAL — low-order interactions more likely", "RandomHAL — always sample treatment", "HAL"]#, "HAL  — filter low nonzeros"]
+models = ["RandomHAL", "RandomHAL_intdecay", "RandomHAL_keeptreat", "HAL", "HAL_minnonzero"]
+names = ["RandomHAL — uniform sampling", "RandomHAL — low-order interactions more likely", "RandomHAL — always sample treatment", "HAL", "HAL  — filter low nonzeros"]
 
 result = [CSV.read(datadir(name), DataFrame) for name in filenames]
 df_raw = sort(DataFrame(reduce(vcat, result)), :n)
