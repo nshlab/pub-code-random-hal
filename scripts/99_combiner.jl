@@ -3,7 +3,7 @@ using DrWatson
 using CSV
 using DataFrames
 
-dirs = ["testing"]
+dirs = ["4_large_randomhal", "3_small_comparison"]
 
 for dir in dirs
     dir_path = datadir(dir)
