@@ -265,8 +265,8 @@ function generate_pred_plots(df_raw, str, models, names, d, d_first, n)
     p_true = true_template * mapping(:C, :true_cate, color=:model)
 
     # Combine the plots together
-    ag = draw!(fig[1,1], p_true + p0, hidden_scales, axis=(xlabel = "Covariate value", ylabel="CATE", limits = ((0.0, 1.0), (-2.1, 1.1))))
-    ag = draw!(fig[1,2], p_true + p1, hidden_scales, axis=(xlabel = "Covariate value", ylabel="", limits = ((0.0, 1.0), (-2.1, 1.1))))
+    ag = draw!(fig[1,1], p_true + p0, hidden_scales, axis=(xlabel = "Covariate value", ylabel="CATE"))#, limits = ((0.0, 1.0), (-2.1, 1.1))))
+    ag = draw!(fig[1,2], p_true + p1, hidden_scales, axis=(xlabel = "Covariate value", ylabel=""))#, limits = ((0.0, 1.0), (-2.1, 1.1))))
 
     fig[0, 1] = Label(fig, "Smoothness = 0", fontsize = 20, font = :bold)
     fig[0, 2] = Label(fig, "Smoothness = 1", fontsize = 20, font = :bold)
@@ -285,7 +285,7 @@ end
 
 ### Small Comparison ###
 filenames = [
-    "3_small_comparison-combined-metrics.csv"
+    "3_small_comparison-combined-metrics (2).csv"
 ]
 models = ["RandomHAL", "RandomHAL_intdecay", "RandomHAL_keeptreat", "HAL", "HAL_minnonzero"]
 names = ["RandomHAL — uniform sampling", "RandomHAL — low-order interactions more likely", "RandomHAL — always sample treatment", "HAL", "HAL  — filter low nonzeros"]
@@ -297,7 +297,7 @@ generate_plots(df_raw, "small_", mean(df_raw.true_eff_bound), models, names)
 
 ### Small Comparison CATE ###
 filenames = [
-    "3_small_comparison-combined-preds.csv"
+    "3_small_comparison-combined-preds (2).csv"
 ]
 
 result = [CSV.read(datadir(name), DataFrame) for name in filenames]
@@ -308,7 +308,7 @@ generate_pred_plots(df_raw, "small_", models, names, 4, 4, 1600)
 
 ### Large Comparison ###
 filenames = [
-    "4_large_randomhal-combined-metrics.csv"
+    "4_large_randomhal-combined-metrics (2).csv"
 ]
 
 result = [CSV.read(datadir(name), DataFrame) for name in filenames]
@@ -322,16 +322,13 @@ generate_plots(df_raw, "large_", mean(df_raw.true_eff_bound), models, names)
 
 ### Large Comparison CATE ###
 filenames = [
-    "4_large_randomhal-combined-preds.csv"
+    "4_large_randomhal-combined-preds (2).csv"
 ]
 
 result = [CSV.read(datadir(name), DataFrame) for name in filenames]
 df_raw = sort(DataFrame(reduce(vcat, result)), :n)
 
 generate_pred_plots(df_raw, "large_", models, names, 40, 8, 1600)
-
-
-
 
 
 
