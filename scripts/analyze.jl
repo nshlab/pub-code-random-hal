@@ -199,11 +199,12 @@ function generate_pred_plots(df_raw, str, models, names, d, d_first, n)
                 :var_pred = var(:preds)
             )
         end
+    df[!, "smoothness"] = "Smoothness = " .* SubString.(df.model_name, length.(df.model_name))
+    df[!, "model"]  = SubString.(df.model_name, 1, length.(df.model_name) .- 1)
+    df = filter(row -> row.model in models, df)
     df[!, "upper"] = df.mean_pred .+ (1.96 .* sqrt.(df.var_pred))
     df[!, "lower"] = df.mean_pred .- (1.96 .* sqrt.(df.var_pred))
 
-    df[!, "smoothness"] = "Smoothness = " .* SubString.(df.model_name, length.(df.model_name))
-    df[!, "model"]  = SubString.(df.model_name, 1, length.(df.model_name) .- 1)
     df[!, :model] = [names[findfirst(==(m), models)] for m in df.model]
     df[!, :model] = CategoricalArrays.categorical(df.model; ordered=true, levels=vcat(["True CATE"], names))
 
@@ -285,10 +286,10 @@ end
 
 ### Small Comparison ###
 filenames = [
-    "3_small_comparison-combined-metrics (2).csv"
+    "3_small_comparison-combined-metrics (3).csv"
 ]
-models = ["RandomHAL", "RandomHAL_intdecay", "RandomHAL_keeptreat", "HAL", "HAL_minnonzero"]
-names = ["RandomHAL — uniform sampling", "RandomHAL — low-order interactions more likely", "RandomHAL — always sample treatment", "HAL", "HAL  — filter low nonzeros"]
+models = ["RandomHAL", "RandomHAL_intdecay", "RandomHAL_keeptreat", "HAL"]
+names = ["RandomHAL — uniform sampling", "RandomHAL — low-order interactions more likely", "RandomHAL — always sample treatment", "HAL"]
 
 result = [CSV.read(datadir(name), DataFrame) for name in filenames]
 df_raw = sort(DataFrame(reduce(vcat, result)), :n)
@@ -297,7 +298,7 @@ generate_plots(df_raw, "small_", mean(df_raw.true_eff_bound), models, names)
 
 ### Small Comparison CATE ###
 filenames = [
-    "3_small_comparison-combined-preds (2).csv"
+    "3_small_comparison-combined-preds (3).csv"
 ]
 
 result = [CSV.read(datadir(name), DataFrame) for name in filenames]
@@ -308,7 +309,7 @@ generate_pred_plots(df_raw, "small_", models, names, 4, 4, 1600)
 
 ### Large Comparison ###
 filenames = [
-    "4_large_randomhal-combined-metrics (2).csv"
+    "4_large_randomhal-combined-metrics (3).csv"
 ]
 
 result = [CSV.read(datadir(name), DataFrame) for name in filenames]
@@ -322,7 +323,7 @@ generate_plots(df_raw, "large_", mean(df_raw.true_eff_bound), models, names)
 
 ### Large Comparison CATE ###
 filenames = [
-    "4_large_randomhal-combined-preds (2).csv"
+    "4_large_randomhal-combined-preds (3).csv"
 ]
 
 result = [CSV.read(datadir(name), DataFrame) for name in filenames]
