@@ -1,11 +1,11 @@
 
-function binary_scm(d, d_first, ρ = 0.05, treat_shift = 2.0)
+function binary_scm(d, d_first, ρ = 0.05, treat_shift = 1.0)
 
     dgp = @dgp(
-       C ~ Beta(1,1),
+       C ~ Beta(1.5,1.5),
        L ~ SklarDist(GaussianCopula(d, ρ), Tuple(fill(Beta(2,2), d))),
-       μ = 3 .* ((sin.(1.15*pi * C).^3 .+ C .^ 2) .+ 1) .* (vec(mean(2 .* L[:,1:d_first] .- L[:,1:d_first].^2, dims = 2))) .+ 2,
-       A ~ Bernoulli.(logistic.(0.25 .* (μ .- 6))),
+       μ = 4 .* (3 .* C .- 2 .* C .^ 2) .* (vec(mean(2 .* L[:,1:d_first] .- L[:,1:d_first].^2, dims = 2))) .+ 1,
+       A ~ Bernoulli.(logistic.(μ .- 4)),
        Y ~ Normal.((1 .+ treat_shift .* A) .* μ .+ 2, sqrt(0.5))
     )
 
@@ -15,7 +15,7 @@ function binary_scm(d, d_first, ρ = 0.05, treat_shift = 2.0)
     monte_carlo = rand(dgp, 10^6)
     partial_mean = mean(2 .* monte_carlo.L[:, 1:d_first] .- (monte_carlo.L[:, 1:d_first] .^2))
 
-    cate(C) = treat_shift .* 3 .* ((sin.(1.15*pi * C).^3 .+ C .^ 2 .+ 1) .* partial_mean)
+    cate(C) = treat_shift .* (4 .* (3 .* C .- 2 .* C .^ 2) .* partial_mean .+ 1)
     
     return scm, cate
 end
