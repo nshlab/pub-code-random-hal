@@ -286,19 +286,24 @@ end
 
 ### Small Comparison ###
 filenames = [
-    "3_small_comparison-combined-metrics (5).csv"
+    "3_small_comparison-combined-metrics (6).csv"
 ]
 models = ["RandomHAL", "RandomHAL_intdecay", "RandomHAL_keeptreat", "HAL"]
 names = ["RandomHAL — uniform sampling", "RandomHAL — low-order interactions more likely", "RandomHAL — always sample treatment", "HAL"]
 
 result = [CSV.read(datadir(name), DataFrame) for name in filenames]
 df_raw = sort(DataFrame(reduce(vcat, result)), :n)
+df_raw = filter(:model_name => ==("RandomHAL1"), df_raw)
+
+using Plots
+Plots.histogram(df_raw.mse_outcome)
+
 
 generate_plots(df_raw, "small_", mean(df_raw.true_eff_bound), models, names)
 
 ### Small Comparison CATE ###
 filenames = [
-    "3_small_comparison-combined-preds (5).csv"
+    "3_small_comparison-combined-preds (6).csv"
 ]
 
 result = [CSV.read(datadir(name), DataFrame) for name in filenames]
@@ -309,7 +314,7 @@ generate_pred_plots(df_raw, "small_", models, names, 4, 4, 1600)
 
 ### Large Comparison ###
 filenames = [
-    "4_large_randomhal-combined-metrics (5).csv"
+    "4_large_randomhal-combined-metrics (6).csv"
 ]
 
 result = [CSV.read(datadir(name), DataFrame) for name in filenames]
@@ -323,7 +328,7 @@ generate_plots(df_raw, "large_", mean(df_raw.true_eff_bound), models, names)
 
 ### Large Comparison CATE ###
 filenames = [
-    "4_large_randomhal-combined-preds (4).csv"
+    "4_large_randomhal-combined-preds (6).csv"
 ]
 
 result = [CSV.read(datadir(name), DataFrame) for name in filenames]

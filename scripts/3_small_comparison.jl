@@ -11,7 +11,8 @@ function make_comparison(n, d)
 
     # Parameter to control how many basis functions are sampled in RandomHAL
     m = Int(round(0.5 * n * log(n)))
-    sec = [[d+2]]
+    #sec = [[d+2]]
+    sec = [[d+1]]
 
     # Parameter to control minimum number of nonzero entries
     minnonzero = Int(floor(sqrt(n)))
@@ -65,7 +66,8 @@ function make_comparison(n, d)
 end
 
 # Define the SCM for this DGP
-d = 4
+#d = 4
+d = 5
 scm, cate = binary_scm(d, d)
 grid_size = 101
 
