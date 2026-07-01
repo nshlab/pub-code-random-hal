@@ -52,14 +52,6 @@ function make_comparison(n, d)
         "HAL1" => (
         HALRegressor(1, 0, kwargs),
         HALBinaryClassifier(1, 0, kwargs)
-        ),
-        "HAL_minnonzero0" => (
-        HALRegressor(0, minnonzero, kwargs),
-        HALBinaryClassifier(0, minnonzero, kwargs)
-        ),
-        "HAL_minnonzero1" => (
-        HALRegressor(1, minnonzero, kwargs),
-        HALBinaryClassifier(1, minnonzero, kwargs)
         )
     ])
 end
