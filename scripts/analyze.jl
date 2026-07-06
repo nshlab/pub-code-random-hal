@@ -294,37 +294,6 @@ names = ["RandomHAL — uniform sampling", "RandomHAL — low-order interactions
 result = [CSV.read(datadir(name), DataFrame) for name in filenames]
 df_raw = sort(DataFrame(reduce(vcat, result)), :n)
 
-ns = unique(df_raw.n)
-    df_raw[!, "upper"] = df_raw.ose .+ 1.96 .* sqrt.(df_raw.ose_var)
-    df_raw[!, "lower"] = df_raw.ose .- 1.96 .* sqrt.(df_raw.ose_var)
-
-    df = @chain df_raw begin
-        @groupby(:n, :model_name)
-        @combine(:mean_mse_outcome = mean(:mse_outcome), 
-                :mean_mse_propensity = mean(:mse_propensity), 
-                :mean_bias = mean(:ose) .- mean(:true_ate), 
-                :mean_ose_var = mean(:ose_var),
-                :mc_var = var(:ose),
-                :mean_cate_mse = mean(:cate_mse),
-                :mean_time_outcome = mean(:time_outcome),
-                :mean_time_propensity = mean(:time_propensity),
-                :coverage = mean((:true_ate .< :upper) .&& (:true_ate .> :lower))
-                )
-    end
-
-    # Add some extra variables
-    df[!, "smoothness"] = "Smoothness = " .* SubString.(df.model_name, length.(df.model_name))
-    df[!, "model"]  = SubString.(df.model_name, 1, length.(df.model_name) .- 1)
-    df[!, "scaled_mse_outcome"] = df.mean_mse_outcome .* sqrt.(df.n)
-
-    df[!, "mean_bias"] = abs.(df.mean_bias)
-    df[!, "scaled_bias"] = df.mean_bias .* sqrt.(df.n)
-
-df.mean_mse_outcome
-hist(df_raw.mse)
-
-df_raw
-
 generate_plots(df_raw, "small_", mean(df_raw.true_eff_bound), models, names)
 
 ### Small Comparison CATE ###
@@ -334,10 +303,6 @@ filenames = [
 
 result = [CSV.read(datadir(name), DataFrame) for name in filenames]
 df_raw = sort(DataFrame(reduce(vcat, result)), :n)
-
-y = df_raw.preds[df_raw.n .== 1600 .&& df_raw.model_name .== "HAL1"]
-x = df_raw.C[df_raw.n .== 1600 .&& df_raw.model_name .== "HAL1"]
-scatter(x, y)
 
 generate_pred_plots(df_raw, "small_", models, names, 4, 4, 1600)
 
