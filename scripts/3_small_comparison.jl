@@ -62,9 +62,5 @@ grid_size = 101
 # Save results to directory with 
 dir = basename(@__FILE__)[1:(end-3)]
 
-dir = "test5"
-n = 900
-i = 1
-
 # Run the simulation
 simulate_binom(scm, cate, n, make_comparison(n, d), dir, i, grid_size)
