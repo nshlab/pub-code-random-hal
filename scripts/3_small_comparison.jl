@@ -54,32 +54,6 @@ function make_comparison(n, d)
     ])
 end
 
-function make_comparison(n, d)
-
-    # Parameters for LASSO fitting
-    kwargs = (standardize = false, nlambda = 100, nfolds = 10,)
-
-    # Parameter to control how many basis functions are sampled in RandomHAL
-    m = Int(round(0.5 * n * log(n)))
-    sec = [[d+2]]
-
-
-    # Functionality to sample interactions with decaying probability
-    int_order = Int(round(0.5 * log(n)))
-    int_weight = Weights(reverse(2 .^ (0:int_order)))
-
-    return([
-        "RandomHAL0" => (
-        RandomHALRegressor(0, m, NamedTuple(), kwargs),
-        RandomHALBinaryClassifier(0, m, NamedTuple(), kwargs)
-        ),
-        "RandomHAL1" => (
-        RandomHALRegressor(1, m, NamedTuple(), kwargs),
-        RandomHALBinaryClassifier(1, m, NamedTuple(), kwargs)
-        )
-    ])
-end
-
 # Define the SCM for this DGP
 d = 4
 scm, cate = binary_scm(d, d)
