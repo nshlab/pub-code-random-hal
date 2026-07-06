@@ -11,46 +11,18 @@ using MLJ
 using LogExpFunctions
 using Distributions, Copulas
 
-scm, cate = binary_scm(3, 3)
-
-d = 40
-d_first = 8
-ρ = 0.05
-treat_shift = 1.0
-dgp = @dgp(
-        L ~ SklarDist(GaussianCopula(d, ρ), Tuple(fill(Beta(2,2), d))),
-        μ = (1 .+ 2 .* L[:, 1]) .* vec(mean(L[:,2:d_first] .- L[:,2:d_first] .^ (1/2), dims = 2)) .+ 0.5,
-        A ~ Bernoulli.(logistic.(2.5 .* μ)),
-        Y ~ Normal.((1 .+ treat_shift .* A) .* μ .+ 2, sqrt(0.5))
-    )
-
-
-dgp = @dgp(
-       C ~ Beta(1.5,1.5),
-       L ~ SklarDist(GaussianCopula(d, ρ), Tuple(fill(Uniform(0,1), d))),
-       μ = sqrt(d_first) .* ((sin.(1.15*pi * C).^3 .+ C .^ 2) .+ 1) .* (vec(mean(2 .* L[:,1:d_first] .- L[:,1:d_first] .^ 2, dims = 2))),
-       A ~ Bernoulli.(logistic.((μ .- (1.2 * sqrt(d_first))))),
-       Y ~ Normal.((4 .+ treat_shift .* A) .* μ .+ 2, 1.0)
-    )
-
-scm = StructuralCausalModel(dgp, :A, :Y)
-
-monte_carlo = rand(dgp, 10^6)
-partial_mean = sqrt(d_first) .* mean(2 .* monte_carlo.L[:, 1:d_first] .- monte_carlo.L[:, 1:d_first] .^ 2)
-
-cate_func(C) = treat_shift .* (sin.(1.15*pi * C).^3 .+ C .^ 2 .+ 1) .* partial_mean
-
-# Numerically approximate the mean part involving L integrated out by the CATE
-#monte_carlo = rand(dgp, 10^6)
-#partial_mean = mean(2 .* monte_carlo.L[:, 1:d_first] .- (monte_carlo.L[:, 1:d_first] .^2))
-#cate(C) = treat_shift .* (sin.(1.15*pi * C).^3 .+ C .^ 2 .+ 1) .* partial_mean .+ 0.25
+scm, cate = binary_scm(40, 8)
 
 n = 1600
 ct = rand(scm, n)
 mean(ct.arrays.μ)
 hist(ct.data.A)
 hist(ct.arrays.μ)
-hist(logistic.(ct.arrays.μ .- (1.2 * sqrt(d_first))))
+hist(ct.arrays.p)
+pr = logistic.(ct.arrays.p .- (0.5 * sqrt(d_first)))
+maximum(pr)
+minimum(pr)
+hist(pr)
 
 hist(ct.data.Y)
 

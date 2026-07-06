@@ -13,8 +13,6 @@ function make_comparison(n, d)
     m = Int(round(0.5 * n * log(n)))
     sec = [[d+2]]
 
-    # Parameter to control minimum number of nonzero entries
-    minnonzero = Int(floor(sqrt(n)))
 
     # Functionality to sample interactions with decaying probability
     int_order = Int(round(0.5 * log(n)))
@@ -52,14 +50,32 @@ function make_comparison(n, d)
         "HAL1" => (
         HALRegressor(1, 0, kwargs),
         HALBinaryClassifier(1, 0, kwargs)
+        )
+    ])
+end
+
+function make_comparison(n, d)
+
+    # Parameters for LASSO fitting
+    kwargs = (standardize = false, nlambda = 100, nfolds = 10,)
+
+    # Parameter to control how many basis functions are sampled in RandomHAL
+    m = Int(round(0.5 * n * log(n)))
+    sec = [[d+2]]
+
+
+    # Functionality to sample interactions with decaying probability
+    int_order = Int(round(0.5 * log(n)))
+    int_weight = Weights(reverse(2 .^ (0:int_order)))
+
+    return([
+        "RandomHAL0" => (
+        RandomHALRegressor(0, m, NamedTuple(), kwargs),
+        RandomHALBinaryClassifier(0, m, NamedTuple(), kwargs)
         ),
-        "HAL_minnonzero0" => (
-        HALRegressor(0, minnonzero, kwargs),
-        HALBinaryClassifier(0, minnonzero, kwargs)
-        ),
-        "HAL_minnonzero1" => (
-        HALRegressor(1, minnonzero, kwargs),
-        HALBinaryClassifier(1, minnonzero, kwargs)
+        "RandomHAL1" => (
+        RandomHALRegressor(1, m, NamedTuple(), kwargs),
+        RandomHALBinaryClassifier(1, m, NamedTuple(), kwargs)
         )
     ])
 end
@@ -71,6 +87,10 @@ grid_size = 101
 
 # Save results to directory with 
 dir = basename(@__FILE__)[1:(end-3)]
+
+dir = "test5"
+n = 900
+i = 1
 
 # Run the simulation
 simulate_binom(scm, cate, n, make_comparison(n, d), dir, i, grid_size)
