@@ -1,13 +1,13 @@
 
-function binary_scm(d, d_first, ρ = 0.05)
+function binary_scm(d, d_first, ρ = 0.01)
 
     dgp = @dgp(
        C ~ Uniform(0,1),
        L ~ SklarDist(GaussianCopula(d, ρ), Tuple(fill(Uniform(0,1), d))),
        p = sqrt(d_first) .* (sin.(1.15*pi * C).^3 .+ C .^ 2) .* (vec(mean(2 .* L[:,1:d_first] .- L[:,1:d_first] .^ 2, dims = 2))),
        A ~ Bernoulli.(logistic.((2 .* (p .- (0.5 * sqrt(d_first)))))),
-       μ = 0.5 .* A .* ((sin.(1.15*pi * C).^3 .+ C .^ 2) .+ 1) .+ p,
-       Y ~ Normal.(μ, 5.0)
+       μ = 2 .* A .* (sin.(1.15*pi * C).^3 .+ C .^ 2) .+ p,
+       Y ~ Normal.(μ, 1.0)
     )
 
     scm = StructuralCausalModel(dgp, :A, :Y)
@@ -16,11 +16,10 @@ function binary_scm(d, d_first, ρ = 0.05)
     #monte_carlo = rand(dgp, 10^6)
     #partial_mean = sqrt(d_first) .* mean(2 .* monte_carlo.L[:, 1:d_first] .- (monte_carlo.L[:, 1:d_first] .^2))
 
-    cate(C) = 0.5 .* ((sin.(1.15*pi * C).^3 .+ C .^ 2) .+ 1)
+    cate(C) = 2 .* (sin.(1.15*pi * C).^3 .+ C .^ 2)
     
     return scm, cate
 end
-
 
 
 function safe_predict(mach, X,  miny, maxy)

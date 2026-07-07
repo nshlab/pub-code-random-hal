@@ -11,7 +11,10 @@ using MLJ
 using LogExpFunctions
 using Distributions, Copulas
 
-scm, cate = binary_scm(40, 8)
+d = 4
+d_first = 4
+
+scm, cate = binary_scm(d, d_first)
 
 n = 1600
 ct = rand(scm, n)
@@ -26,11 +29,10 @@ hist(pr)
 
 hist(ct.data.Y)
 
-scatter(ct.data.Y, conmean(scm, ct, :Y), color = ct.data.A)
+scatter(conmean(scm, ct, :Y), ct.data.Y, color = ct.data.A)
 mean(ct.data.Y[ct.data.A .== 1]) - mean(ct.data.Y[ct.data.A .== 0])
 ate(scm)
-var(ct.data.Y)
-var(conmean(scm, ct, :Y))
+
 
 XA = responseparents(ct)
 X = treatmentparents(ct)

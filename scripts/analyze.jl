@@ -61,7 +61,7 @@ function generate_plots(df_raw, str, eff_bound, models, names, max_n = 1600)
 
     df[!, "mean_bias"] = abs.(df.mean_bias)
     df[!, "scaled_bias"] = df.mean_bias .* sqrt.(df.n)
-    df[!, "scaled_mse"] = df.n .* ((df.mean_bias .^ 2) .+ df.mean_ose_var) ./ eff_bound
+    df[!, "scaled_mse"] = df.n .* ((df.mean_bias .^ 2) .+ df.mc_var) ./ eff_bound
 
     df = filter(row -> row.model in models, df)
     df = filter(row -> row.n <= max_n, df)
@@ -286,7 +286,7 @@ end
 
 ### Small Comparison ###
 filenames = [
-    "3_small_comparison-combined-metrics (9).csv"
+    "3_small_comparison-combined-metrics (10).csv"
 ]
 models = ["RandomHAL", "RandomHAL_intdecay", "RandomHAL_keeptreat", "HAL"]
 names = ["RandomHAL — uniform sampling", "RandomHAL — low-order interactions more likely", "RandomHAL — always sample treatment", "HAL"]
@@ -298,7 +298,7 @@ generate_plots(df_raw, "small_", mean(df_raw.true_eff_bound), models, names)
 
 ### Small Comparison CATE ###
 filenames = [
-    "3_small_comparison-combined-preds (9).csv"
+    "3_small_comparison-combined-preds (10).csv"
 ]
 
 result = [CSV.read(datadir(name), DataFrame) for name in filenames]
@@ -309,7 +309,7 @@ generate_pred_plots(df_raw, "small_", models, names, 4, 4, 1600)
 
 ### Large Comparison ###
 filenames = [
-    "4_large_randomhal-combined-metrics (9).csv"
+    "4_large_randomhal-combined-metrics (10).csv"
 ]
 
 result = [CSV.read(datadir(name), DataFrame) for name in filenames]
@@ -323,7 +323,7 @@ generate_plots(df_raw, "large_", mean(df_raw.true_eff_bound), models, names)
 
 ### Large Comparison CATE ###
 filenames = [
-    "4_large_randomhal-combined-preds (9).csv"
+    "4_large_randomhal-combined-preds (10).csv"
 ]
 
 result = [CSV.read(datadir(name), DataFrame) for name in filenames]
