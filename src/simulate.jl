@@ -1,13 +1,13 @@
 
-function binary_scm(d, d_first, ρ = 0.01)
+function binary_scm(d, d_first, ρ = 0.1)
 
     dgp = @dgp(
-       C ~ Uniform(0,1),
+       C ~ Beta(2,2),
        L ~ SklarDist(GaussianCopula(d, ρ), Tuple(fill(Uniform(0,1), d))),
-       p = sqrt(d_first) .* (sin.(1.15*pi * C).^3 .+ C .^ 2) .* (vec(mean(2 .* L[:,1:d_first] .- L[:,1:d_first] .^ 2, dims = 2))),
-       A ~ Bernoulli.(logistic.((2 .* (p .- (0.5 * sqrt(d_first)))))),
-       μ = 2 .* A .* (sin.(1.15*pi * C).^3 .+ C .^ 2) .+ p,
-       Y ~ Normal.(μ, 1.0)
+       p = 10 .* sqrt(d_first) .* (vec(mean(L[:,1:d_first] .- L[:,1:d_first] .^ (1/2), dims = 2))),
+       A ~ Bernoulli.(logistic.(p .+ 1.5 .* sqrt(d_first))),
+       μ = A .* (sin.(1.15*pi * C).^3 .+ C .^ 2) .- p,
+       Y ~ Normal.(μ, 0.5)
     )
 
     scm = StructuralCausalModel(dgp, :A, :Y)
@@ -16,7 +16,7 @@ function binary_scm(d, d_first, ρ = 0.01)
     #monte_carlo = rand(dgp, 10^6)
     #partial_mean = sqrt(d_first) .* mean(2 .* monte_carlo.L[:, 1:d_first] .- (monte_carlo.L[:, 1:d_first] .^2))
 
-    cate(C) = 2 .* (sin.(1.15*pi * C).^3 .+ C .^ 2)
+    cate(C) = (sin.(1.15*pi * C).^3 .+ C .^ 2)
     
     return scm, cate
 end

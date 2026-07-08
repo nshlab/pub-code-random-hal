@@ -11,8 +11,8 @@ using MLJ
 using LogExpFunctions
 using Distributions, Copulas
 
-d = 4
-d_first = 4
+d = 40
+d_first = 8
 
 scm, cate = binary_scm(d, d_first)
 
@@ -22,7 +22,8 @@ mean(ct.arrays.μ)
 hist(ct.data.A)
 hist(ct.arrays.μ)
 hist(ct.arrays.p)
-pr = logistic.(ct.arrays.p .- (0.5 * sqrt(d_first)))
+hist(ct.data.Y)
+pr = logistic.(ct.arrays.p .+ 1.5 .* sqrt(d_first))
 maximum(pr)
 minimum(pr)
 hist(pr)
@@ -91,16 +92,18 @@ plugin = mean(μ1 .- μ0)
 ose = mean(eif)
 ose_var = var(eif) / n
 
+ose_var .* 1600
+
 # Compute CATE
 cate_mach = machine(outcome_model, C, eif) |> fit!
 #cate_mach = machine(HALRegressor(), C, eif) |> fit!
 
 cate_pred = MLJ.predict(cate_mach, Ctest)
-cate_mse = mean((cate_pred .- cate_func(Ctest.C)).^2)
+cate_mse = mean((cate_pred .- cate(Ctest.C)).^2)
 
 grid_size = 101
 C_grid = range(0, 1, grid_size)
-true_cate_grid = cate_func(C_grid)
+true_cate_grid = cate(C_grid)
 cate_pred_grid = MLJ.predict(cate_mach, (C = C_grid,))
 
 fig, ax, line_plot = lines(C_grid, true_cate_grid)
