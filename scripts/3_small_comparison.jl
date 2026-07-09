@@ -56,7 +56,8 @@ end
 
 # Define the SCM for this DGP
 d = 4
-scm, cate = binary_scm(d, d)
+d_first = 2
+scm, cate = binary_scm(d, d_first)
 grid_size = 101
 
 # Save results to directory with 

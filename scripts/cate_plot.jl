@@ -11,8 +11,8 @@ using MLJ
 using LogExpFunctions
 using Distributions, Copulas
 
-d = 40
-d_first = 8
+d = 4
+d_first = 2
 
 scm, cate = binary_scm(d, d_first)
 
@@ -23,7 +23,7 @@ hist(ct.data.A)
 hist(ct.arrays.μ)
 hist(ct.arrays.p)
 hist(ct.data.Y)
-pr = logistic.(ct.arrays.p .+ 1.5 .* sqrt(d_first))
+pr = logistic.(2 .* ct.arrays.p)
 maximum(pr)
 minimum(pr)
 hist(pr)
@@ -61,7 +61,7 @@ XA_A1 = responseparents(ct_A1)
 ct_A0 = intervene(ct, treat_none)
 XA_A0 = responseparents(ct_A0)
 
-kwargs = (standardize = true, nlambda = 100, nfolds = 10,)
+kwargs = (standardize = false, nlambda = 100, nfolds = 10,)
 m = Int(round(0.3 * n * log(n)))
 outcome_model = RandomHALRegressor(0, m, NamedTuple(), kwargs)
 propensity_model = RandomHALBinaryClassifier(0, m, NamedTuple(), kwargs)
