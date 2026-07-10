@@ -1,5 +1,5 @@
 
-function binary_scm(d, d_first, ρ = 0.1)
+function binary_scm(d, d_first, ρ = 0.01)
 
     dgp = @dgp(
        C ~ Uniform(-1, 1),
@@ -7,7 +7,7 @@ function binary_scm(d, d_first, ρ = 0.1)
        p = sqrt(d_first) .* (vec(mean(L[:,1:d_first], dims = 2))),
        A ~ Bernoulli.(logistic.(2 .* p)),
        μ = A .* abs.(C) .+ p,
-       Y ~ Normal.(μ, 0.25)
+       Y ~ Normal.(μ, 1.0)
     )
 
     scm = StructuralCausalModel(dgp, :A, :Y)
