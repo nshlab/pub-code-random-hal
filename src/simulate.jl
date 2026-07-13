@@ -1,5 +1,5 @@
 
-function binary_scm(d, d_first, ρ = 0.01)
+function binary_scm(d, d_first, ρ = 0.05)
 
     dgp = @dgp(
        C ~ Uniform(-1, 1),
