@@ -8,7 +8,7 @@ i = ARGS[2]
 function make_comparison(n, d)
 
     # Parameters for LASSO fitting
-    kwargs0 = (standardize = true, nlambda = 100, nfolds = 10,)
+    kwargs0 = (standardize = false, nlambda = 100, nfolds = 10,)
     kwargs1 = (standardize = false, nlambda = 100, nfolds = 10,)
 
     # Parameter to control how many basis functions are sampled in RandomHAL
@@ -52,7 +52,7 @@ end
 
 # Define the SCM for this DGP
 d = 40
-d_first = 5
+d_first = 4
 scm, cate = binary_scm(d, d_first)
 grid_size = 101
 

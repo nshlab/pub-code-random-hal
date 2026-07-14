@@ -2,11 +2,11 @@
 function binary_scm(d, d_first, ρ = 0.05)
 
     dgp = @dgp(
-       C ~ Uniform(-1, 1),
+       C ~ Uniform(0, 1),
        L ~ SklarDist(GaussianCopula(d, ρ), Tuple(fill(Uniform(-1,1), d))),
-       p = sqrt(d_first) .* (vec(mean(L[:,1:d_first], dims = 2))),
+       p = sqrt(d_first) .* (vec(mean(sin.(0.5 .* pi .* L[:,1:d_first]), dims = 2))),
        A ~ Bernoulli.(logistic.(2 .* p)),
-       μ = A .* abs.(C) .+ p,
+       μ = A .* (sin.(0.7 .* pi .* C).^3) .+ p,
        Y ~ Normal.(μ, 1.0)
     )
 
@@ -16,7 +16,7 @@ function binary_scm(d, d_first, ρ = 0.05)
     #monte_carlo = rand(dgp, 10^6)
     #partial_mean = sqrt(d_first) .* mean(2 .* monte_carlo.L[:, 1:d_first] .- (monte_carlo.L[:, 1:d_first] .^2))
 
-    cate(C) = abs.(C)
+    cate(C) = sin(0.7 .* pi .* C).^3
     
     return scm, cate
 end

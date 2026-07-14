@@ -5,8 +5,8 @@
 #SBATCH --error=logs/%x_%A_%a.err
 #SBATCH --time=08:00:00
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=8G
-#SBATCH --array=1-800
+#SBATCH --mem=12G
+#SBATCH --array=1-4000
 
 # Put what you want to do with singularity below
 srun -c ${SLURM_CPUS_PER_TASK} singularity exec ../julia_latest.sif julia 'scripts/0_orchestrator.jl' ${SLURM_ARRAY_TASK_ID}

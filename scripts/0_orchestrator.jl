@@ -8,8 +8,8 @@ id = parse(Int, ARGS[1])
 #idmax = parse(Int, ARGS[3])
 
 arg_dicts = Dict(
-    :i => collect(1:100),
-    :n => [100, 400, 900, 1600],
+    :i => collect(1:400),
+    :n => [100, 400, 900, 1600, 2500],
     :dgp => ["3_small_comparison.jl", "4_large_randomhal.jl"]
 )
 
