@@ -15,9 +15,7 @@ function binary_scm(d, d_first, ρ = 0.05)
     # Numerically approximate the mean part involving L integrated out by the CATE
     #monte_carlo = rand(dgp, 10^6)
     #partial_mean = sqrt(d_first) .* mean(2 .* monte_carlo.L[:, 1:d_first] .- (monte_carlo.L[:, 1:d_first] .^2))
-
-    cate(C) = sin(0.7 .* pi .* C).^3
-    
+    cate(C) = sin.(0.7 .* pi .* C).^3
     return scm, cate
 end
 
