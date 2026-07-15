@@ -7,7 +7,7 @@ function binary_scm(d, d_first, ρ = 0.05)
        p = sqrt(d_first) .* (vec(mean(sin.(0.5 .* pi .* L[:,1:d_first]), dims = 2))),
        A ~ Bernoulli.(logistic.(2 .* p)),
        μ = A .* (sin.(0.7 .* pi .* C).^3) .+ p,
-       Y ~ Normal.(μ, 1.0)
+       Y ~ Normal.(μ, 2.0)
     )
 
     scm = StructuralCausalModel(dgp, :A, :Y)
