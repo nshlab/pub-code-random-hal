@@ -11,8 +11,8 @@ using MLJ
 using LogExpFunctions
 using Distributions, Copulas
 
-d = 4
-d_first = 2
+d = 40
+d_first = 4
 
 scm, cate = binary_scm(d, d_first)
 
@@ -23,12 +23,10 @@ hist(ct.data.A)
 hist(ct.arrays.μ)
 hist(ct.arrays.p)
 hist(ct.data.Y)
-pr = logistic.(2 .* ct.arrays.p)
+pr = logistic.(ct.arrays.p / sqrt(d_first))
 maximum(pr)
 minimum(pr)
 hist(pr)
-
-hist(ct.data.Y)
 
 scatter(conmean(scm, ct, :Y), ct.data.Y, color = ct.data.A)
 mean(ct.data.Y[ct.data.A .== 1]) - mean(ct.data.Y[ct.data.A .== 0])
@@ -74,7 +72,6 @@ time_propensity = @elapsed propensity_mach = machine(propensity_model, X, A) |> 
 
 p = scatter(true_conmean, MLJ.predict(outcome_mach, XAtest))
 p = scatter(true_prob, MLJ.predict(propensity_mach, Xtest))
-
 
 # Estimate performance of models on new data
 mse_outcome = mean((RandomHALsims.safe_predict(outcome_mach, XAtest, miny, maxy) .- true_conmean).^2)
