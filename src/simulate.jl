@@ -46,7 +46,7 @@ function simulate_binom(scm::StructuralCausalModel, cate, n::Int, modellist, dir
     X = treatmentparents.(ct)
     A = getindex.(treatmentmatrix.(ct), :, 1)
     y = getindex.(responsematrix.(ct), :, 1)
-    C = reduce(vcat, (C = Tables.getcolumn(Xs, 1),) for Xs in X])
+    C = (C = reduce(vcat, Tables.getcolumn(Xs, 1) for Xs in X),)
     miny = minimum.(y)
     maxy = maximum.(y)
 
@@ -55,9 +55,9 @@ function simulate_binom(scm::StructuralCausalModel, cate, n::Int, modellist, dir
     cttest = [rand(scm, n) for n in s]
     XAtest = responseparents.(cttest)
     Xtest = treatmentparents.(cttest)
-    Atest = getindex.(treatmentmatrix.(ct), :,1)
-    ytest = getindex.(responsematrix.(cttest), :, 1)
-    Ctest = reduce(vcat, (C = Tables.getcolumn(Xtests, 1),) for Xtests in Xtest)
+    #Atest = getindex.(treatmentmatrix.(cttest), :,1)
+    #ytest = getindex.(responsematrix.(cttest), :, 1)
+    Ctest = (C = reduce(vcat, Tables.getcolumn(Xtests, 1) for Xtests in Xtest),)
 
     # Get true function values
     true_conmean = map(cttest -> conmean(scm, cttest, :Y), cttest)
@@ -67,7 +67,6 @@ function simulate_binom(scm::StructuralCausalModel, cate, n::Int, modellist, dir
     XA_A1 = map(ct_A1 -> responseparents(ct_A1), ct_A1)
     ct_A0 = map(ct -> intervene(ct, treat_none), ct)
     XA_A0 = map(ct_A0 -> responseparents(ct_A0), ct_A0)
-
 
     for model_pair in modellist
             outcome_model, propensity_model = model_pair[2]
