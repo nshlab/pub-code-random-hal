@@ -5,7 +5,7 @@
 #SBATCH --error=logs/%x_%A_%a.err
 #SBATCH --time=08:00:00
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=12G
+#SBATCH --mem=8G
 #SBATCH --array=1-4000
 
 # Put what you want to do with singularity below

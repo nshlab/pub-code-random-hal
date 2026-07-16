@@ -199,8 +199,6 @@ function generate_plots(df_raw, str, eff_bound, models, names, max_n = 1600)
 
 end
 
-
-
 function generate_pred_plots(df_raw, str, models, names, d, d_first, n)
 
     # Get the true CATE function for the DGP
@@ -257,7 +255,8 @@ function generate_pred_plots(df_raw, str, models, names, d, d_first, n)
         palette = (color = [:black, "#0f5575", "#ffa600"],)
     )
 
-    fig = Figure(; size=(1200, 500))
+    #fig = Figure(; size=(1200, 500))
+    fig = Figure(; size=(500, 910))
     hidden_scales = scales(
         LineStyle = (; legend = false),
     )
@@ -282,19 +281,19 @@ function generate_pred_plots(df_raw, str, models, names, d, d_first, n)
 
     # Combine the plots together
     ag = draw!(fig[1,1], p_true + p0, hidden_scales, axis=(xlabel = "Covariate value", ylabel="CATE"))#, limits = ((0.0, 1.0), (-2.1, 1.1))))
-    ag = draw!(fig[1,2], p_true + p1, hidden_scales, axis=(xlabel = "Covariate value", ylabel=""))#, limits = ((0.0, 1.0), (-2.1, 1.1))))
+    ag = draw!(fig[3,1], p_true + p1, hidden_scales, axis=(xlabel = "Covariate value", ylabel=""))#, limits = ((0.0, 1.0), (-2.1, 1.1))))
 
     fig[0, 1] = Label(fig, "Smoothness = 0", fontsize = 20, font = :bold)
-    fig[0, 2] = Label(fig, "Smoothness = 1", fontsize = 20, font = :bold)
+    fig[2, 1] = Label(fig, "Smoothness = 1", fontsize = 20, font = :bold)
 
-    legend!(fig[2, 1:2], ag, orientation=:vertical, tellheight=true)
+    legend!(fig[4, 1], ag, orientation=:vertical, tellheight=true)
 
     colsize!(fig.layout, 1, 400)
-    colsize!(fig.layout, 2, 400)
     rowsize!(fig.layout, 0, 10)
-    rowsize!(fig.layout, 1, 240)
-    rowsize!(fig.layout, 2, 100)
-
+    rowsize!(fig.layout, 1, 400)
+    rowsize!(fig.layout, 2, 10)
+    rowsize!(fig.layout, 3, 400)
+    rowsize!(fig.layout, 4, 100)
     resize_to_layout!(fig)
     save(plotsdir(str * "cate_preds.png"), fig)
 end
