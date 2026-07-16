@@ -64,6 +64,7 @@ function generate_plots(df_raw, str, eff_bound, models, names, max_n = 1600)
     df[!, "mean_bias"] = abs.(df.mean_bias)
     df[!, "scaled_bias"] = df.mean_bias .* sqrt.(df.n)
     df[!, "scaled_mse"] = df.n .* ((df.mean_bias .^ 2) .+ df.mc_var) ./ eff_bound
+    df[!, "mse"] = df.n .* ((df.mean_bias .^ 2) .+ df.mc_var) ./ eff_bound
 
     df = filter(row -> row.model in models, df)
     df = filter(row -> row.n <= max_n, df)
@@ -78,7 +79,7 @@ function generate_plots(df_raw, str, eff_bound, models, names, max_n = 1600)
         LineStyle = (; legend = false),
         Marker = (; legend = false)
     )
-    template = data(df) * visual(Lines, linewidth=2.5) * visual(ScatterLines, markersize=10, linewidth=2.5) * mapping(layout = :smoothness)
+
     set_theme!(
         fontsize = 20,#16
         linewidth = 5,#2.5
@@ -97,73 +98,46 @@ function generate_plots(df_raw, str, eff_bound, models, names, max_n = 1600)
     )
 
     # Figure 1
-    fig = Figure(; size=(640, 640))
-    p1 = template * 
-        mapping(:n => "", :mean_mse_outcome, color=:model => "", linestyle=:smoothness, marker=:smoothness)
+    fig = Figure(; size=(960, 640))
 
-    p2 = template * 
-        mapping(:n => "", :mean_mse_propensity, color=:model => "", linestyle=:smoothness, marker=:smoothness)
+    df_long = stack(df, [:mean_mse_outcome, :mean_mse_propensity], variable_name = :labels, value_name = :values)
+    df_long.labels = ifelse.(df_long.labels .== "mean_mse_outcome", "Outcome regression", "Propensity score")
+    template = data(df_long) * visual(Lines, linewidth=2.5) * visual(ScatterLines, markersize=10, linewidth=2.5) * mapping(row = :smoothness, col = :labels)
+    
+    p1 = template * 
+        mapping(:n => "", :values, color=:model => "", linestyle=:smoothness, marker=:smoothness)
 
     # Draw commands utilizing the scales object
-    ag = draw!(fig[1, 1:3], p1, hidden_scales; axis=(aspect = 1, xticks=ns, ylabel="Out-of-sample MSE"), facet = (; linkxaxes = :none))
-    ag = draw!(fig[3, 1:3], p2, hidden_scales; axis=(aspect = 1, xticks=ns, ylabel="Out-of-sample MSE"), facet = (; linkxaxes = :none))
+    ag = draw!(fig[1, 1], p1, hidden_scales; axis=(aspect = 1, xticks=ns, ylabel="Out-of-sample MSE", xlabel = "Sample size"), facet = (; linkxaxes = :all, linkyaxes = :none))
 
-    fig[0, 2] = Label(fig, "Outcome regression", fontsize = 20, font = :bold)
-    fig[2, 2] = Label(fig, "Propensity score", fontsize = 20, font = :bold)
-    legend!(fig[4, 1:3], ag, orientation=:vertical, tellheight=true)
-    configure_layout_axes!(fig.layout, 20, 10)
-
-    # reduce vertical gap between title row and plots
-    rowsize!(fig.layout, 0, 10)
-    rowsize!(fig.layout, 1, 300)
-    rowsize!(fig.layout, 2, 10)
-    rowsize!(fig.layout, 3, 300)
-
+    legend!(fig[2, 1], ag, orientation=:vertical, tellheight=true)
     resize_to_layout!(fig)
     save(plotsdir(str*"MSE.png"), fig)
 
     # Figure 2
-    fig = Figure(; size=(1500, 900))
+    fig = Figure(; size=(960, 640))
+
+    df_long = stack(df, [:mean_bias, :scaled_bias, :scaled_mse], variable_name = :labels, value_name = :values)
+    df_long.labels = ifelse.(df_long.labels .== "mean_bias", "Bias",
+                        ifelse.(df_long.labels .== "scaled_bias", "Scaled bias", "Scaled MSE / Eff. Bound"))
+    
+    template = data(df_long) * visual(Lines, linewidth=2.5) * visual(ScatterLines, markersize=10, linewidth=2.5) * mapping(row = :smoothness, col = :labels)
 
     p1 = template * 
-        mapping(:n => "", :mean_bias, color=:model => "", linestyle=:smoothness, marker=:smoothness)
-    ag = draw!(fig[1, 1], p1, hidden_scales, axis=(aspect=1, xticks=ns, ylabel="Bias"), facet = (; linkxaxes = :none))
+        mapping(:n => "", :values, color=:model => "", linestyle=:smoothness, marker=:smoothness)
+    ag = draw!(fig[1, 1], p1, hidden_scales, axis=(aspect=1, xticks=ns, title="", ylabel="", xlabel = "Sample size"), facet = (; linkxaxes = :all, linkyaxes = :none))
 
-    p2 = template * 
-        mapping(:n => "", :scaled_bias, color=:model => "", linestyle=:smoothness, marker=:smoothness)
-    ag = draw!(fig[1, 2], p2, hidden_scales, axis=(aspect=1, xticks=ns, ylabel="Scaled bias"), facet = (; linkxaxes = :none))
-
-    p3 = template * 
-        mapping(:n => "", :scaled_mse, color=:model => "", linestyle=:smoothness, marker=:smoothness)# + 
-        #(visual(HLines) * mapping([eff_bound]))
-    ag = draw!(fig[2, 1], p3, hidden_scales, axis=(aspect=1, xticks=ns, ylabel="Scaled MSE / Eff. Bound"), facet = (; linkxaxes = :none))
-
-    p4 = (visual(HLines) * mapping([0.95])) + (template * mapping(:n => "", :coverage, color=:model => "", linestyle=:smoothness, marker=:smoothness))
-    ag = draw!(fig[2, 2], p4, hidden_scales, 
-          axis=(aspect=1, xticks=ns, yticks = [0.0, 0.5, 0.95], ylabel="Coverage", limits=(nothing, (0.0, 1.0))), 
-          facet = (; linkxaxes = :none))
-
-    p5 = template * 
-        mapping(:n => "", :var_ratio, color=:model => "", linestyle=:smoothness, marker=:smoothness)# + 
-        #(visual(HLines) * mapping([eff_bound]))
-    ag = draw!(fig[3, 1], p5, hidden_scales, axis=(aspect=1, xticks=ns, ylabel="Est. Var. / Monte Carlo Var."), facet = (; linkxaxes = :none))
-
-    p6 = (visual(HLines) * mapping([0.95])) + (template * mapping(:n => "", :coverage_mc, color=:model => "", linestyle=:smoothness, marker=:smoothness))
-    ag = draw!(fig[3, 2], p6, hidden_scales, 
-          axis=(aspect=1, xticks=ns, yticks = [0.0, 0.5, 0.95], ylabel="Monte Carlo Coverage", limits=(nothing, (0.0, 1.0))), 
-          facet = (; linkxaxes = :none))
-
-    legend!(fig[4, 1:2], ag, orientation=:vertical, tellheight=true)
+    legend!(fig[2, 1], ag, orientation=:vertical, tellheight=true)
     
-    configure_layout_axes!(fig.layout)
-    rowsize!(fig.layout, 1, 300)
-    rowsize!(fig.layout, 2, 300)
-    rowsize!(fig.layout, 3, 300)
+    rowsize!(fig.layout, 1, 640)
+    colsize!(fig.layout, 1, 960)
     resize_to_layout!(fig)
     save(plotsdir(str*"onestep.png"), fig)
 
     # Figure 3
-    fig = Figure(; size=(1000, 310))
+    fig = Figure(; size=(960, 640))
+    template = data(df) * visual(Lines, linewidth=2.5) * visual(ScatterLines, markersize=10, linewidth=2.5) * mapping(row = :smoothness)
+
     p = template * 
         mapping(:n => "", :mean_cate_mse, color=:model => "", linestyle=:smoothness, marker=:smoothness)
     draw!(fig[1,1:3], p, hidden_scales, axis=(xticks=ns, ylabel="Out-of-sample MSE"))
@@ -177,27 +151,49 @@ function generate_plots(df_raw, str, eff_bound, models, names, max_n = 1600)
     save(plotsdir(str*"cate.png"), fig)
 
     # Figure 4
-    fig = Figure(; size=(640, 640))
+    fig = Figure(; size=(960, 640))
+
+    df_long = stack(df, [:mean_time_outcome, :mean_time_propensity], variable_name = :labels, value_name = :values)
+    df_long.labels = ifelse.(df_long.labels .== "mean_time_outcome", "Outcome regression", "Propensity score")
+    template = data(df_long) * visual(Lines, linewidth=2.5) * visual(ScatterLines, markersize=10, linewidth=2.5) * mapping(row = :smoothness, col = :labels)
+    
     p1 = template * 
-        mapping(:n => "", :mean_time_outcome, color=:model => "", linestyle=:smoothness, marker=:smoothness)
+        mapping(:n => "", :values, color=:model => "", linestyle=:smoothness, marker=:smoothness)
 
-    p2 = template * 
-        mapping(:n => "", :mean_time_propensity, color=:model => "", linestyle=:smoothness, marker=:smoothness)
+    # Draw commands utilizing the scales object
+    ag = draw!(fig[1, 1], p1, hidden_scales; axis=(aspect = 1, xticks=ns, ylabel="Time (seconds)", xlabel = "Sample size"), facet = (; linkxaxes = :all, linkyaxes = :none))
 
-    ag = draw!(fig[1, 1:3], p1, hidden_scales, axis=(aspect = 1, xticks=ns, ylabel="Training time (seconds)"))
-    ag = draw!(fig[3, 1:3], p2, hidden_scales, axis=(aspect = 1, xticks=ns, ylabel="Training time (seconds)"))
-    legend!(fig[4, 1:3], ag, orientation=:vertical, tellheight=true)
-    fig[0, 2] = Label(fig, "Outcome regression", fontsize = 20, font = :bold)
-    fig[2, 2] = Label(fig, "Propensity score", fontsize = 20, font = :bold)
-    configure_layout_axes!(fig.layout, 20, 10)
-    rowsize!(fig.layout, 0, 10)
-    rowsize!(fig.layout, 1, 300)
-    rowsize!(fig.layout, 2, 10)
-    rowsize!(fig.layout, 3, 300)
+    legend!(fig[2, 1], ag, orientation=:vertical, tellheight=true)
     resize_to_layout!(fig)
     save(plotsdir(str*"time.png"), fig)
 
+    # Nima Plot
+    fig = Figure(; size=(480, 900))
+    df_nima = filter(row -> row.smoothness == "Smoothness = 0", df)
+    template_nima = data(df_nima) * visual(Lines, linewidth=2.5) * visual(ScatterLines, markersize=10, linewidth=2.5)
+
+    p1 = template_nima * 
+        mapping(:n => "", :mean_bias, color=:model => "", linestyle=:smoothness, marker=:smoothness)
+    ag = draw!(fig[1, 1], p1, hidden_scales, axis=(aspect=1, xticks=ns, ylabel="Bias"), facet = (; linkxaxes = :none))
+
+    p2 = template_nima * 
+        mapping(:n => "", :scaled_mse, color=:model => "", linestyle=:smoothness, marker=:smoothness)# + 
+        #(visual(HLines) * mapping([eff_bound]))
+    ag = draw!(fig[2, 1], p2, hidden_scales, axis=(aspect=1, xticks=ns, ylabel="Scaled MSE / Eff. Bound"), facet = (; linkxaxes = :none))
+
+    legend!(fig[3, 1], ag, orientation=:vertical, tellheight=true)
+    
+    configure_layout_axes!(fig.layout)
+    colsize!(fig.layout, 1, 480)
+    rowsize!(fig.layout, 1, 400)
+    rowsize!(fig.layout, 2, 400)
+    rowsize!(fig.layout, 3, 100)
+
+    resize_to_layout!(fig)
+    save(plotsdir(str*"nima_onestep.png"), fig)
+
 end
+
 
 function generate_pred_plots(df_raw, str, models, names, d, d_first, n)
 
@@ -281,19 +277,19 @@ function generate_pred_plots(df_raw, str, models, names, d, d_first, n)
 
     # Combine the plots together
     ag = draw!(fig[1,1], p_true + p0, hidden_scales, axis=(xlabel = "Covariate value", ylabel="CATE"))#, limits = ((0.0, 1.0), (-2.1, 1.1))))
-    ag = draw!(fig[3,1], p_true + p1, hidden_scales, axis=(xlabel = "Covariate value", ylabel=""))#, limits = ((0.0, 1.0), (-2.1, 1.1))))
+    #ag = draw!(fig[3,1], p_true + p1, hidden_scales, axis=(xlabel = "Covariate value", ylabel="CATE"))#, limits = ((0.0, 1.0), (-2.1, 1.1))))
 
-    fig[0, 1] = Label(fig, "Smoothness = 0", fontsize = 20, font = :bold)
-    fig[2, 1] = Label(fig, "Smoothness = 1", fontsize = 20, font = :bold)
+    #fig[0, 1] = Label(fig, "Smoothness = 0", fontsize = 20, font = :bold)
+    #fig[2, 1] = Label(fig, "Smoothness = 1", fontsize = 20, font = :bold)
 
-    legend!(fig[4, 1], ag, orientation=:vertical, tellheight=true)
+    legend!(fig[2, 1], ag, orientation=:vertical, tellheight=true)
 
     colsize!(fig.layout, 1, 400)
-    rowsize!(fig.layout, 0, 10)
+    #rowsize!(fig.layout, 0, 10)
     rowsize!(fig.layout, 1, 400)
-    rowsize!(fig.layout, 2, 10)
-    rowsize!(fig.layout, 3, 400)
-    rowsize!(fig.layout, 4, 100)
+    rowsize!(fig.layout, 2, 100)
+    #rowsize!(fig.layout, 3, 400)
+    #rowsize!(fig.layout, 4, 100)
     resize_to_layout!(fig)
     save(plotsdir(str * "cate_preds.png"), fig)
 end
@@ -303,7 +299,7 @@ filenames = [
     "3_small_comparison-combined-metrics (18).csv"
 ]
 models = ["RandomHAL", "RandomHAL_intdecay", "RandomHAL_keeptreat", "HAL"]
-names = ["RandomHAL — uniform sampling", "RandomHAL — low-order interactions more likely", "RandomHAL — always sample treatment", "HAL"]
+names = ["RandomHAL — uniform sampling", "RandomHAL — prioritize low-order interactions", "RandomHAL — always sample treatment", "HAL"]
 
 result = [CSV.read(datadir(name), DataFrame) for name in filenames]
 df_raw = sort(DataFrame(reduce(vcat, result)), :n)
@@ -330,7 +326,7 @@ result = [CSV.read(datadir(name), DataFrame) for name in filenames]
 df_raw = sort(DataFrame(reduce(vcat, result)), :n)
 
 models = ["RandomHAL", "RandomHAL_intdecay", "RandomHAL_keeptreat"]
-names = ["RandomHAL — uniform sampling", "RandomHAL — low-order interactions more likely", "RandomHAL — always sample treatment"]
+names = ["RandomHAL — uniform sampling", "RandomHAL — prioritize low-order interactions", "RandomHAL — always sample treatment"]
 
 generate_plots(df_raw, "large_", mean(df_raw.true_eff_bound), models, names)
 
