@@ -14,6 +14,7 @@ module RandomHALsims
     using Tables
     using DrWatson
     using Dates
+    using Random
 
     include("simulate.jl")
     export binary_scm, small_scm, simulate_binom
