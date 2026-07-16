@@ -50,7 +50,9 @@ function generate_plots(df_raw, str, eff_bound, models, names, max_n = 1600)
                 :mean_cate_mse = mean(:cate_mse),
                 :mean_time_outcome = mean(:time_outcome),
                 :mean_time_propensity = mean(:time_propensity),
-                :coverage = mean((:true_ate .< :upper) .&& (:true_ate .> :lower))
+                :coverage = mean((:true_ate .< :upper) .&& (:true_ate .> :lower)),
+                :coverage_mc = mean((:true_ate .< :ose .+ 1.96 .* sqrt(var(:ose))) .&& (:true_ate .> :ose .- 1.96 .* sqrt(var(:ose)))),
+                :var_ratio = mean(:ose_var) / var(:ose)
                 )
     end
 
@@ -121,7 +123,7 @@ function generate_plots(df_raw, str, eff_bound, models, names, max_n = 1600)
     save(plotsdir(str*"MSE.png"), fig)
 
     # Figure 2
-    fig = Figure(; size=(1500, 600))
+    fig = Figure(; size=(1500, 900))
 
     p1 = template * 
         mapping(:n => "", :mean_bias, color=:model => "", linestyle=:smoothness, marker=:smoothness)
@@ -137,16 +139,26 @@ function generate_plots(df_raw, str, eff_bound, models, names, max_n = 1600)
     ag = draw!(fig[2, 1], p3, hidden_scales, axis=(aspect=1, xticks=ns, ylabel="Scaled MSE / Eff. Bound"), facet = (; linkxaxes = :none))
 
     p4 = (visual(HLines) * mapping([0.95])) + (template * mapping(:n => "", :coverage, color=:model => "", linestyle=:smoothness, marker=:smoothness))
-      # Single positional argument as required by HLines
-
     ag = draw!(fig[2, 2], p4, hidden_scales, 
           axis=(aspect=1, xticks=ns, yticks = [0.0, 0.5, 0.95], ylabel="Coverage", limits=(nothing, (0.0, 1.0))), 
           facet = (; linkxaxes = :none))
-    legend!(fig[3, 1:2], ag, orientation=:vertical, tellheight=true)
+
+    p5 = template * 
+        mapping(:n => "", :var_ratio, color=:model => "", linestyle=:smoothness, marker=:smoothness)# + 
+        #(visual(HLines) * mapping([eff_bound]))
+    ag = draw!(fig[3, 1], p5, hidden_scales, axis=(aspect=1, xticks=ns, ylabel="Est. Var. / Monte Carlo Var."), facet = (; linkxaxes = :none))
+
+    p6 = (visual(HLines) * mapping([0.95])) + (template * mapping(:n => "", :coverage_mc, color=:model => "", linestyle=:smoothness, marker=:smoothness))
+    ag = draw!(fig[3, 2], p6, hidden_scales, 
+          axis=(aspect=1, xticks=ns, yticks = [0.0, 0.5, 0.95], ylabel="Monte Carlo Coverage", limits=(nothing, (0.0, 1.0))), 
+          facet = (; linkxaxes = :none))
+
+    legend!(fig[4, 1:2], ag, orientation=:vertical, tellheight=true)
     
     configure_layout_axes!(fig.layout)
     rowsize!(fig.layout, 1, 300)
     rowsize!(fig.layout, 2, 300)
+    rowsize!(fig.layout, 3, 300)
     resize_to_layout!(fig)
     save(plotsdir(str*"onestep.png"), fig)
 
@@ -184,7 +196,10 @@ function generate_plots(df_raw, str, eff_bound, models, names, max_n = 1600)
     rowsize!(fig.layout, 3, 300)
     resize_to_layout!(fig)
     save(plotsdir(str*"time.png"), fig)
+
 end
+
+
 
 function generate_pred_plots(df_raw, str, models, names, d, d_first, n)
 
@@ -286,7 +301,7 @@ end
 
 ### Small Comparison ###
 filenames = [
-    "3_small_comparison-combined-metrics (16).csv"
+    "3_small_comparison-combined-metrics (18).csv"
 ]
 models = ["RandomHAL", "RandomHAL_intdecay", "RandomHAL_keeptreat", "HAL"]
 names = ["RandomHAL — uniform sampling", "RandomHAL — low-order interactions more likely", "RandomHAL — always sample treatment", "HAL"]
@@ -298,7 +313,7 @@ generate_plots(df_raw, "small_", mean(df_raw.true_eff_bound), models, names)
 
 ### Small Comparison CATE ###
 filenames = [
-    "3_small_comparison-combined-preds (16).csv"
+    "3_small_comparison-combined-preds (18).csv"
 ]
 
 result = [CSV.read(datadir(name), DataFrame) for name in filenames]
@@ -309,7 +324,7 @@ generate_pred_plots(df_raw, "small_", models, names, 4, 2, 1600)
 
 ### Large Comparison ###
 filenames = [
-    "4_large_randomhal-combined-metrics (16).csv"
+    "4_large_randomhal-combined-metrics (18).csv"
 ]
 
 result = [CSV.read(datadir(name), DataFrame) for name in filenames]
@@ -323,13 +338,13 @@ generate_plots(df_raw, "large_", mean(df_raw.true_eff_bound), models, names)
 
 ### Large Comparison CATE ###
 filenames = [
-    "4_large_randomhal-combined-preds (16).csv"
+    "4_large_randomhal-combined-preds (18).csv"
 ]
 
 result = [CSV.read(datadir(name), DataFrame) for name in filenames]
 df_raw = sort(DataFrame(reduce(vcat, result)), :n)
 
-generate_pred_plots(df_raw, "large_", models, names, 40, 5, 1600)
+generate_pred_plots(df_raw, "large_", models, names, 40, 4, 1600)
 
 
 
