@@ -85,13 +85,13 @@ mses_replace = [mean([mse(ym, yhat) for ym in err]) for err in errs_replace]
 Finally, let's plot the results. We can see that, indeed, the experimental results lie close to the theoretical bound on the reduction in error.
 
 ```{julia}
-p1 = plot(d_range, mses ./ mses[1], xlabel = "Number of parameters", ylabel = "MSE (normalized)", color = :blue, label = "No replacement", dpi = 300)
-plot!(d_range, mses_replace ./ mses_replace[1], xlabel = "Number of parameters", color = :red,
+p1 = Plots.plot(d_range, mses ./ mses[1], xlabel = "Number of parameters", ylabel = "MSE (normalized)", color = :blue, label = "No replacement", dpi = 300)
+Plots.plot!(d_range, mses_replace ./ mses_replace[1], xlabel = "Number of parameters", color = :red,
     label = "Replacement")
-plot!(d_range, (1 .- (d_range) ./ d), color = :blue, linestyle = :dash,
-    label = "Theoretical 1 - k/d")
-plot!(d_range, exp.(-(d_range) ./ d), color = :red, linestyle = :dash,
-    label = "Theoretical exp(-k/d)")
+Plots.plot!(d_range, (1 .- (d_range) ./ d), color = :blue, linestyle = :dash,
+    label = "Theoretical 1 - k/p")
+Plots.plot!(d_range, exp.(-(d_range) ./ d), color = :red, linestyle = :dash,
+    label = "Theoretical exp(-k/p)")
 display(p1)
 savefig(p1, "plots/uncorr_approx.png")
 ```
@@ -131,14 +131,14 @@ mses_replace2 = [mean([mse(ym, yhat) for ym in err]) for err in errs_replace2]
 Finally, let's plot the results again. We can see that, even with only moderately correlated covariates, the mean-squared error decays much more rapidly as more and more covariates become included in the model.
 
 ```{julia}
-p2 = plot(d_range, mses2 ./ mses2[1], xlabel = "Number of parameters", ylabel = "MSE (normalized)", color = :blue,
+p2 = Plots.plot(d_range, mses2 ./ mses2[1], xlabel = "Number of parameters", ylabel = "MSE (normalized)", color = :blue,
     label = "No replacement", title = "", dpi=300)
-plot!(d_range, mses_replace2 ./ mses_replace2[1], xlabel = "Number of parameters", color = :red,
+Plots.plot!(d_range, mses_replace2 ./ mses_replace2[1], xlabel = "Number of parameters", color = :red,
     label = "Replacement")
-plot!(d_range, (1 .- (d_range) ./ d), color = :blue, linestyle = :dash,
-    label = "Theoretical 1 - k/d")
-plot!(d_range, exp.(-(d_range) ./ d), color = :red, linestyle = :dash,
-    label = "Theoretical exp(-k/d)")
+Plots.plot!(d_range, (1 .- (d_range) ./ d), color = :blue, linestyle = :dash,
+    label = "Theoretical 1 - k/p")
+Plots.plot!(d_range, exp.(-(d_range) ./ d), color = :red, linestyle = :dash,
+    label = "Theoretical exp(-k/p)")
 display(p2)
 savefig(p2, "plots/corr_approx.png")
 ```
